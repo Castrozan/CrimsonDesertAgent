@@ -14,6 +14,7 @@ class HudTest(unittest.TestCase):
             Word("Speak", 320, 800, 370, 96.0),
             Word("Ross", 420, 802, 455, 91.0),
             Word("Talk", 560, 604, 590, 88.0),
+            Word("(1/3)", 600, 605, 640, 88.0),
             Word("~~", 700, 300, 720, 95.0),
             Word("blur", 900, 300, 930, 30.0),
             Word("frame", 20, 20, 60, 99.0),
@@ -21,7 +22,7 @@ class HudTest(unittest.TestCase):
         self.assertEqual(
             lines_from_words(seen),
             [
-                {"text": "Talk", "x": 560, "y": 604},
+                {"text": "Talk (1/3)", "x": 560, "y": 604},
                 {"text": "Speak with Ross", "x": 320, "y": 800},
             ],
         )

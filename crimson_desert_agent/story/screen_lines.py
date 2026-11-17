@@ -1,9 +1,11 @@
+import re
 from dataclasses import dataclass, replace
 
 MINIMUM_CONFIDENCE = 70
 MINIMUM_WORD_LENGTH = 2
 LINE_HEIGHT_PIXELS = 14
 WORD_GAP_PIXELS = 80
+COUNTER = re.compile(r"^\(\d+/\d+\)$")
 MOD_OVERLAY = (0, 0, 420, 110)
 
 
@@ -24,10 +26,10 @@ def inside(word: Word, box: tuple[int, int, int, int]) -> bool:
 
 def readable(word: Word) -> bool:
     letters = sum(character.isalnum() for character in word.text)
+    worded = letters >= MINIMUM_WORD_LENGTH and letters * 2 >= len(word.text)
     return (
         word.confidence >= MINIMUM_CONFIDENCE
-        and letters >= MINIMUM_WORD_LENGTH
-        and letters * 2 >= len(word.text)
+        and (worded or COUNTER.match(word.text) is not None)
         and not inside(word, MOD_OVERLAY)
     )
 
