@@ -14,6 +14,9 @@ FULL_SPEED_DISTANCE_M = 4.0
 MINIMUM_MOVE_STICK = 0.5
 PROGRESS_WINDOW_SECONDS = 3.0
 MINIMUM_PROGRESS_M = 0.5
+APPROACH_TOLERANCE_M = 0.5
+APPROACH_FACING_TOLERANCE_DEGREES = 5.0
+APPROACH_TURN_TIMEOUT_SECONDS = 8.0
 CAMERA_DEGREES_PER_SECOND_BY_STICK = (
     (0.30, 0.0),
     (0.35, 2.7),
@@ -132,6 +135,32 @@ class Steering:
         finally:
             self._sticks.set_left_stick(0.0, 0.0)
         return self._result(reason, distance, started)
+
+    def approach(
+        self, actor_position: list[float], standoff_m: float, timeout_seconds: float
+    ) -> dict:
+        actor = GroundVector.from_world(actor_position)
+        offset = actor.minus(self._world()[0])
+        walk = None
+        if offset.length() > standoff_m + APPROACH_TOLERANCE_M:
+            direction = offset.normalized()
+            walk = self.go_to(
+                actor.x - direction.x * standoff_m,
+                actor.z - direction.z * standoff_m,
+                APPROACH_TOLERANCE_M,
+                timeout_seconds,
+            )
+        offset = actor.minus(self._world()[0])
+        turn = self.turn_to(
+            heading_degrees(offset),
+            APPROACH_FACING_TOLERANCE_DEGREES,
+            APPROACH_TURN_TIMEOUT_SECONDS,
+        )
+        return {
+            "distance_m": round(offset.length(), 2),
+            "facing": turn.arrived,
+            "walk": walk.reason if walk else "already near",
+        }
 
     def turn_to(
         self, heading: float, tolerance_degrees: float, timeout_seconds: float

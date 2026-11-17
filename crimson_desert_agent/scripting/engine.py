@@ -3,9 +3,11 @@ from typing import Callable
 from ..game.desktop import DesktopError
 from ..game.line_client import LineServiceUnavailable
 from .devices import Devices
+from .observation import ActorNotListed
 from .photography import ActorNotInView
 from .script import ScriptError, parse
 from .script_run import Aborted, ScriptRun
+from .steering import NotInWorld
 
 
 class Engine:
@@ -43,6 +45,8 @@ class Engine:
                 LineServiceUnavailable,
                 DesktopError,
                 ActorNotInView,
+                ActorNotListed,
+                NotInWorld,
             ) as error:
                 outcome = {"ok": False, "error": f"{reports[-1]['step']}: {error}"}
             finally:

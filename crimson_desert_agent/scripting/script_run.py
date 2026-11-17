@@ -3,7 +3,8 @@ from typing import Callable
 
 from . import photography
 from .devices import Devices
-from .observation import ground_speed, summarize
+from .hud import lines_from_words
+from .observation import ground_speed, listed_actor, summarize
 from .script import Step
 from .steering import Steering
 from .teaching import DEFAULT_TIMEOUT_SECONDS, teach_peer
@@ -17,6 +18,7 @@ GOTO_TIMEOUT_SECONDS = 30.0
 RESYNCHRONIZE_AFTER_SECONDS = 0.05
 SPEED_SAMPLE_SECONDS = 0.1
 ACTORS_IN_STATE = 4
+APPROACH_STANDOFF_M = 2.0
 
 
 class Aborted(Exception):
@@ -152,6 +154,26 @@ class ScriptRun:
         return photography.take(
             step, self._devices.camera, self._bridge.read_state, self.pause
         )
+
+    def _hud(self, step: Step) -> list[dict]:
+        frame = self._devices.camera.capture()
+        left, top = 0, 0
+        if "crop" in step.options:
+            left, top, width, height = step.options["crop"]
+            frame = frame.crop((left, top, left + width, top + height))
+        return lines_from_words(self._devices.read_words(frame), left, top)
+
+    def _approach(self, step: Step) -> dict:
+        actor = listed_actor(self._bridge.read_state(), step.values[0])
+        self._set_controls(step.rest, True)
+        try:
+            return self._steering.approach(
+                actor["position"],
+                step.options.get("distance", APPROACH_STANDOFF_M),
+                step.options.get("timeout", GOTO_TIMEOUT_SECONDS),
+            )
+        finally:
+            self._set_controls(step.rest, False)
 
     def _teach(self, step: Step) -> dict:
         with self._devices.open_peer() as peer:

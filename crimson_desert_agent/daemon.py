@@ -5,7 +5,7 @@ import socketserver
 import threading
 import time
 
-from .game import desktop, screenshot
+from .game import desktop, screenshot, text_reader
 from .game.bridge_client import BridgeSession
 from .peer import open_peer
 from .scripting.devices import Devices
@@ -40,6 +40,7 @@ class Daemon:
                 camera=screenshot,
                 game_log=GameLog(GAME_LOG_PATH),
                 open_peer=open_peer,
+                read_words=text_reader.read_words,
             ),
             self._abort.wait,
             time.monotonic,

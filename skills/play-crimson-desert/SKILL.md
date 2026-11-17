@@ -16,7 +16,7 @@ Without the MCP server, run the same script text through the plugin's `scripts/c
 
 ### Reading the answer
 
-Each step reports its duration in `ms`; `state`, `turn`, `goto`, `log` and `shot` add a `result`. On `ok: false` the
+Each step reports its duration in `ms`; observing and steering steps add a `result`. On `ok: false` the
 `error` names the failing step and the steps after it did not run. An invalid step rejects the whole script before any
 input is sent.
 
@@ -43,6 +43,19 @@ State carries every field the running mod exposes, so read what it returns befor
 from it, such as stance, menus, prompts or dialogue on older mod builds, needs the `screenshot` tool, or `shot PATH`
 inside a script when the picture must be taken at an exact moment. When stance is absent, take a screenshot before
 the first action: a crouched character moves at walking pace under every input.
+
+### Follow the story from text, not pictures
+
+`hud` returns the text on screen as lines with window pixel positions: the quest objective on the left, the guide line
+at the bottom, button prompts such as `Talk`, and name labels. A text answer costs one model turn; a screenshot costs
+two and more tokens. Begin every story decision with `focus; hud; status` and act on the objective it names.
+
+Actors in `status` carry no names. To find a named person, visit the nearest characters in one script, as in
+`approach KEY_1; hud; approach KEY_2; hud`, and pick the stop whose `hud` shows the name or a `Talk` prompt.
+`approach` walks to two metres from the actor and turns the camera onto it.
+
+At a `Talk` prompt hold `x` for one second, then advance dialogue with `press a` and read `hud` again until the
+objective changes. Take a screenshot only when `hud` returns nothing useful, such as for a map or a cutscene.
 
 ### Controls
 

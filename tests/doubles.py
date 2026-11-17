@@ -53,7 +53,11 @@ class RecordingPeer:
 
 
 def engine_for(
-    game: SimulatedGame, desktop: RecordingDesktop | None = None, camera=None, peer=None
+    game: SimulatedGame,
+    desktop: RecordingDesktop | None = None,
+    camera=None,
+    peer=None,
+    read_words=None,
 ) -> Engine:
     devices = Devices(
         game,
@@ -62,5 +66,6 @@ def engine_for(
         camera or RecordingCamera(),
         FixedLog(),
         lambda: peer or RecordingPeer(),
+        read_words or (lambda frame: []),
     )
     return Engine(devices, game.interrupted_within, game.clock)

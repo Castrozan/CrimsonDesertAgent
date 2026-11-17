@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-packages=(mcp evdev hypothesis pillow)
+packages=(mcp evdev hypothesis pillow pytesseract)
 revision="$(printf '%s' "${packages[*]}" | cksum | cut -d' ' -f1)"
 environment="${XDG_CACHE_HOME:-$HOME/.cache}/crimson-desert-agent/python-$revision"
 if [[ ! -x "$environment/bin/python" ]]; then

@@ -37,6 +37,19 @@ SUMMARIZED_PLAYER_FIELDS = frozenset(
 )
 
 
+class ActorNotListed(Exception):
+    pass
+
+
+def listed_actor(state: dict, key: str) -> dict:
+    for actor in state.get("actors") or []:
+        if key in (str(actor.get("key")), actor.get("kind")):
+            return actor
+    raise ActorNotListed(
+        f"no actor {key!r} in the bridge state; give a key or a kind that status lists"
+    )
+
+
 def compact_actor(actor: dict) -> dict:
     compact = dict(actor)
     if isinstance(actor.get("position"), list):

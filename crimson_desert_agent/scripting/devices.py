@@ -10,3 +10,4 @@ class Devices:
     camera: object
     game_log: object
     open_peer: Callable[[], ContextManager]
+    read_words: Callable[[object], list]

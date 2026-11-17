@@ -88,6 +88,13 @@ VERBS = {
             "fov": positive,
         },
     ),
+    "hud": Signature("hud [crop=LEFT,TOP,WIDTH,HEIGHT]", options={"crop": pixel_box}),
+    "approach": Signature(
+        "approach ACTOR_KEY [CONTROL...] [distance=METRES] [timeout=SECONDS]",
+        (path,),
+        rest=control,
+        options={"distance": positive, "timeout": seconds},
+    ),
     "teach": Signature("teach [timeout=SECONDS]", options={"timeout": seconds}),
 }
 USAGE = "Steps separated by ';' or newlines: " + " | ".join(
