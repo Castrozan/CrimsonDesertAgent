@@ -4,13 +4,14 @@ import tempfile
 
 from mcp.server.fastmcp import FastMCP, Image
 
-from . import client, desktop
-from .bridge_client import BridgeSession
-from .game_log import GameLog
-from .observation import with_camera_angles
-from .script import USAGE
+from . import client
+from .game import desktop
+from .game.bridge_client import BridgeSession
+from .game.game_log import GameLog
+from .scripting.observation import with_camera_angles
+from .scripting.script import USAGE
 from .settings import BRIDGE_HOST, BRIDGE_PORT, BRIDGE_TIMEOUT_SECONDS, GAME_LOG_PATH
-from .virtual_pad import CONTROL_NAMES
+from .game.virtual_pad import CONTROL_NAMES
 
 server = FastMCP(
     "crimson-desert",

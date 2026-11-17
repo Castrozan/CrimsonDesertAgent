@@ -5,10 +5,10 @@ import socketserver
 import threading
 import time
 
-from . import desktop
-from .bridge_client import BridgeSession
-from .engine import Engine
-from .game_log import GameLog
+from .game import desktop
+from .game.bridge_client import BridgeSession
+from .scripting.engine import Engine
+from .game.game_log import GameLog
 from .settings import (
     BRIDGE_HOST,
     BRIDGE_PORT,
@@ -16,7 +16,7 @@ from .settings import (
     GAME_LOG_PATH,
     SOCKET_PATH,
 )
-from .virtual_pad import VirtualPad
+from .game.virtual_pad import VirtualPad
 
 
 class Daemon:

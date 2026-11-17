@@ -1,6 +1,6 @@
 import math
 
-from crimson_desert_agent.virtual_pad import CONTROL_NAMES
+from crimson_desert_agent.game.virtual_pad import CONTROL_NAMES
 
 
 class SimulatedGame:

@@ -3,8 +3,8 @@ import unittest
 
 from hypothesis import given, settings, strategies as st
 
-from crimson_desert_agent.navigation import turn_degrees
-from crimson_desert_agent.steering import Steering
+from crimson_desert_agent.scripting.navigation import turn_degrees
+from crimson_desert_agent.scripting.steering import Steering
 from tests.simulated_game import SimulatedGame
 
 headings = st.floats(min_value=0, max_value=360, allow_nan=False, exclude_max=True)

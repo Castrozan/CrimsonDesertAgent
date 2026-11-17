@@ -1,7 +1,7 @@
 from typing import Callable, ContextManager
 
-from .bridge_client import BridgeUnavailable
-from .desktop import DesktopError
+from ..game.bridge_client import BridgeUnavailable
+from ..game.desktop import DesktopError
 from .script import ScriptError, parse
 from .script_run import Aborted, ScriptRun
 

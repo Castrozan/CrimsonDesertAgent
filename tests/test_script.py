@@ -2,8 +2,8 @@ import unittest
 
 from hypothesis import given, strategies as st
 
-from crimson_desert_agent.script import VERBS, ScriptError, parse
-from crimson_desert_agent.virtual_pad import CONTROL_NAMES
+from crimson_desert_agent.scripting.script import VERBS, ScriptError, parse
+from crimson_desert_agent.game.virtual_pad import CONTROL_NAMES
 
 controls = st.sampled_from(CONTROL_NAMES)
 durations = st.floats(min_value=0, max_value=120, allow_nan=False).map(
@@ -176,7 +176,7 @@ class ParseTest(unittest.TestCase):
                 parse(script)
 
     def test_every_verb_has_a_handler(self):
-        from crimson_desert_agent.script_run import ScriptRun
+        from crimson_desert_agent.scripting.script_run import ScriptRun
 
         for verb in VERBS:
             self.assertTrue(callable(getattr(ScriptRun, f"_{verb}")), verb)

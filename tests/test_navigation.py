@@ -3,7 +3,7 @@ import unittest
 
 from hypothesis import HealthCheck, given, settings, strategies as st
 
-from crimson_desert_agent.navigation import GroundVector, heading_degrees, stick_toward
+from crimson_desert_agent.scripting.navigation import GroundVector, heading_degrees, stick_toward
 
 coordinate = st.floats(min_value=-5000, max_value=5000, allow_nan=False)
 angle = st.floats(min_value=0, max_value=2 * math.pi, allow_nan=False)

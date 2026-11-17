@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Callable
 
-from .virtual_pad import CONTROL_NAMES
+from ..game.virtual_pad import CONTROL_NAMES
 
 MAXIMUM_SECONDS = 120.0
 STICK_SIDES = ("left", "right")

@@ -1,7 +1,7 @@
 import json
 import sys
 
-from .script import USAGE
+from .scripting.script import USAGE
 
 COMMANDS = "mcp | daemon | state | run SCRIPT | abort | quit | measure [REPETITIONS]"
 
@@ -30,8 +30,8 @@ def main(arguments: list[str]) -> int:
         except DaemonUnavailable as error:
             print(error)
     elif command == "state":
-        from .bridge_client import BridgeSession, BridgeUnavailable
-        from .observation import with_camera_angles
+        from .game.bridge_client import BridgeSession, BridgeUnavailable
+        from .scripting.observation import with_camera_angles
         from .settings import BRIDGE_HOST, BRIDGE_PORT, BRIDGE_TIMEOUT_SECONDS
 
         try:

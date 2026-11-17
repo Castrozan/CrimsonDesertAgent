@@ -2,9 +2,9 @@ import unittest
 
 from hypothesis import given, strategies as st
 
-from crimson_desert_agent.bridge_client import BridgeUnavailable
-from crimson_desert_agent.desktop import DesktopError
-from crimson_desert_agent.engine import Engine
+from crimson_desert_agent.game.bridge_client import BridgeUnavailable
+from crimson_desert_agent.game.desktop import DesktopError
+from crimson_desert_agent.scripting.engine import Engine
 from tests.simulated_game import SimulatedGame
 
 
