@@ -92,8 +92,9 @@ a screenshot when health drops with no clear cause, and press the button shown.
 Tutorial text appears in the top left corner, where `hud` does not read: screenshot it when the guide names a move
 you do not know. A tap of `x` jumps 0.4 m. Holding `x` for one second while pushing forward makes the long precision
 jump that crosses gaps and mounts waist-high steps. Next to a wall, a tap of `x` climbs it; jump while tilting the
-stick toward a tall wall to cling, then steer along it. Falling into the void respawns the player before the
-obstacle. Track `position` after each attempt: the height component tells whether a climb worked.
+stick toward a tall wall to cling, then steer along it. Clinging works by walking into the wall, then `stick left 0 1; press x 0.15 0` and keeping the
+stick toward the wall: height rises about 0.7 m per second and the player goes over the top. Face the wall squarely
+first with `turn`. Falling into the void respawns the player before the obstacle. Track `position` after each attempt: the height component tells whether a climb worked.
 
 ### Fire and other ground hazards
 
