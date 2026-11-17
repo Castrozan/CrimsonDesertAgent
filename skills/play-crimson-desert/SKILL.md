@@ -78,10 +78,22 @@ paused unless `hud` was read in the same script since the last confirm. On `exit
 
 ### Fighting and dying
 
-In a fight act at once and keep scripts short: guard with `hold 1.5 lb` when the guide says to block, attack with
-`press rb` several times, and read `hud; state` at the end of every script to watch `health` and the guide. Standing
-idle among enemies kills the player within a minute. When `hud` shows `Revive at Checkpoint`, run `hold 1.2 x`, wait
-twelve seconds and read `hud` again; `a` does nothing on that screen.
+Fight with the `fight` step, not hand-timed presses: `fight X Z seconds=45 leash=8` holds the ground around X Z, keeps
+one target, turns the camera onto it, strikes in three-hit combos when aimed and in reach, guards after a hit, and
+never lunges toward a recorded fire. Its result counts strikes and damage. Anchor it on the quest marker's
+`marker_position`, then read `hud; status` and repeat until the objective counter moves.
+
+When `hud` shows `Revive at Checkpoint`, run `hold 1.2 x`, wait twelve seconds and read `hud` again; `a` does nothing
+on that screen. A lone button glyph in the middle of the screen is a quick time prompt that `hud` cannot read: take
+a screenshot when health drops with no clear cause, and press the button shown.
+
+### Traversal
+
+Tutorial text appears in the top left corner, where `hud` does not read: screenshot it when the guide names a move
+you do not know. A tap of `x` jumps 0.4 m. Holding `x` for one second while pushing forward makes the long precision
+jump that crosses gaps and mounts waist-high steps. Next to a wall, a tap of `x` climbs it; jump while tilting the
+stick toward a tall wall to cling, then steer along it. Falling into the void respawns the player before the
+obstacle. Track `position` after each attempt: the height component tells whether a climb worked.
 
 ### Fire and other ground hazards
 
