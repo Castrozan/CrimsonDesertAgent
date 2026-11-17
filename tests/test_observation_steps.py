@@ -13,7 +13,11 @@ class ObservationStepsTest(unittest.TestCase):
             state = plain()
             state["menu_open"] = True
             state["actors"] = [
-                {"key": key, "distance": key + 0.26, "position": [1.26, 2.0, 3.0]}
+                {
+                    "key": key,
+                    "distance": key + 0.26,
+                    "position": [1.26 + 3 * key, 2.0, 3.0],
+                }
                 for key in range(9)
             ]
             state["player"]["stance"] = "crouched"

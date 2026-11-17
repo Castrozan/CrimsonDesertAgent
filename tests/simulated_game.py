@@ -15,6 +15,7 @@ class SimulatedGame:
         turn_rate_scale=1.0,
         blocked=False,
         in_world=True,
+        obstacle=None,
     ) -> None:
         self.position = list(position)
         self.camera_yaw_degrees = camera_yaw_degrees
@@ -22,6 +23,7 @@ class SimulatedGame:
         self.turn_rate_scale = turn_rate_scale
         self.blocked = blocked
         self.in_world = in_world
+        self.obstacle = obstacle
         self.left_stick = (0.0, 0.0)
         self.right_stick = (0.0, 0.0)
         self.pressed: set[str] = set()
@@ -41,20 +43,24 @@ class SimulatedGame:
         yaw = math.radians(self.camera_yaw_degrees)
         if not self.blocked:
             right, forward = self.left_stick
-            self.position[0] += (
-                self.run_speed
-                * seconds
-                * (right * math.cos(yaw) + forward * math.sin(yaw))
+            moved_x = self.position[0] + self.run_speed * seconds * (
+                right * math.cos(yaw) + forward * math.sin(yaw)
             )
-            self.position[2] += (
-                self.run_speed
-                * seconds
-                * (-right * math.sin(yaw) + forward * math.cos(yaw))
+            moved_z = self.position[2] + self.run_speed * seconds * (
+                -right * math.sin(yaw) + forward * math.cos(yaw)
             )
+            if not self.inside_obstacle(moved_x, moved_z):
+                self.position[0], self.position[2] = moved_x, moved_z
         self.camera_yaw_degrees = (
             self.camera_yaw_degrees + self.camera_rate() * seconds
         ) % 360
         return False
+
+    def inside_obstacle(self, x: float, z: float) -> bool:
+        if self.obstacle is None:
+            return False
+        centre_x, centre_z, radius = self.obstacle
+        return math.hypot(x - centre_x, z - centre_z) < radius
 
     def camera_rate(self) -> float:
         stick = self.right_stick[0]

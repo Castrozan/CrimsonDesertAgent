@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from itertools import permutations
 from typing import Callable
 
 from .arguments import (
@@ -41,6 +42,7 @@ class Step:
     text: str
 
 
+MAXIMUM_WORDS_TO_REORDER = 4
 STEERING_OPTIONS = {"tolerance": number, "timeout": seconds}
 VERBS = {
     "press": Signature(
@@ -90,10 +92,20 @@ VERBS = {
     ),
     "hud": Signature("hud [crop=LEFT,TOP,WIDTH,HEIGHT]", options={"crop": pixel_box}),
     "approach": Signature(
-        "approach ACTOR_KEY [CONTROL...] [distance=METRES] [timeout=SECONDS]",
+        "approach ACTOR_KEY_OR_NAME [distance=METRES] [timeout=SECONDS]",
         (path,),
-        rest=control,
         options={"distance": positive, "timeout": seconds},
+    ),
+    "talk": Signature(
+        "talk ACTOR_KEY_OR_NAME [timeout=SECONDS]",
+        (path,),
+        options={"timeout": seconds},
+    ),
+    "marker": Signature("marker [timeout=SECONDS]", options={"timeout": seconds}),
+    "prove_attack": Signature(
+        "prove_attack [CONTROL] [wait=SECONDS]",
+        optional=(control,),
+        options={"wait": seconds},
     ),
     "teach": Signature("teach [timeout=SECONDS]", options={"timeout": seconds}),
 }
@@ -102,35 +114,51 @@ USAGE = "Steps separated by ';' or newlines: " + " | ".join(
 )
 
 
+def convert(signature: Signature, verb: str, words: list[str]) -> Step:
+    positional = [word for word in words if "=" not in word]
+    named = [word.split("=", 1) for word in words if "=" in word]
+    fixed = signature.required + signature.optional
+    if len(positional) < len(signature.required):
+        raise ValueError("too few arguments")
+    values = tuple(convert_word(word) for convert_word, word in zip(fixed, positional))
+    extra = positional[len(fixed) :]
+    if extra and signature.rest is None:
+        raise ValueError("too many arguments")
+    if len(extra) < signature.minimum_rest:
+        raise ValueError("too few arguments")
+    rest = tuple(signature.rest(word) for word in extra)
+    options = {}
+    for name, word in named:
+        if name not in signature.options:
+            raise ValueError(f"unknown option {name!r}")
+        options[name] = signature.options[name](word)
+    return Step(verb, values, rest, options, " ".join([verb, *words]))
+
+
+def reordered_hint(signature: Signature, verb: str, words: list[str]) -> str:
+    if len(words) > MAXIMUM_WORDS_TO_REORDER:
+        return ""
+    for order in permutations(words):
+        try:
+            convert(signature, verb, list(order))
+        except ValueError:
+            continue
+        return f" Did you mean {' '.join([verb, *order])!r}?"
+    return ""
+
+
 def parse_step(text: str) -> Step:
-    words = text.split()
-    verb = words[0]
+    verb, *words = text.split()
     signature = VERBS.get(verb)
     if signature is None:
         raise ScriptError(f"unknown step {verb!r}. {USAGE}")
-    positional = [word for word in words[1:] if "=" not in word]
-    named = [word.split("=", 1) for word in words[1:] if "=" in word]
-    fixed = signature.required + signature.optional
     try:
-        if len(positional) < len(signature.required):
-            raise ValueError("too few arguments")
-        values = tuple(convert(word) for convert, word in zip(fixed, positional))
-        extra = positional[len(fixed) :]
-        if extra and signature.rest is None:
-            raise ValueError("too many arguments")
-        if len(extra) < signature.minimum_rest:
-            raise ValueError("too few arguments")
-        rest = tuple(signature.rest(word) for word in extra)
-        options = {}
-        for name, word in named:
-            if name not in signature.options:
-                raise ValueError(f"unknown option {name!r}")
-            options[name] = signature.options[name](word)
+        return convert(signature, verb, words)
     except ValueError as error:
+        hint = reordered_hint(signature, verb, words)
         raise ScriptError(
-            f"bad step {text.strip()!r}: {error}. Usage: {signature.usage}"
+            f"bad step {text.strip()!r}: {error}.{hint} Usage: {signature.usage}"
         ) from error
-    return Step(verb, values, rest, options, " ".join(words))
 
 
 def parse(script: str) -> list[Step]:

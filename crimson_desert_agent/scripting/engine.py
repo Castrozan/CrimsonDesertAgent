@@ -6,7 +6,8 @@ from .devices import Devices
 from .observation import ActorNotListed
 from .photography import ActorNotInView
 from .script import ScriptError, parse
-from .script_run import Aborted, ScriptRun
+from ..story.acquaintances import Acquaintances
+from .script_run import Aborted, ConfirmRefused, ScriptRun
 from .steering import NotInWorld
 
 
@@ -20,6 +21,7 @@ class Engine:
         self._devices = devices
         self._wait = wait
         self._clock = clock
+        self._acquaintances = Acquaintances()
 
     def run(self, script: str) -> dict:
         try:
@@ -30,7 +32,9 @@ class Engine:
         reports = []
         outcome: dict = {"ok": True}
         with self._devices.open_bridge() as bridge:
-            run = ScriptRun(self._devices, bridge, self._wait, self._clock)
+            run = ScriptRun(
+                self._devices, bridge, self._wait, self._clock, self._acquaintances
+            )
             try:
                 for step in steps:
                     step_started = self._clock()
@@ -42,6 +46,7 @@ class Engine:
                         report["result"] = result
             except (
                 Aborted,
+                ConfirmRefused,
                 LineServiceUnavailable,
                 DesktopError,
                 ActorNotInView,

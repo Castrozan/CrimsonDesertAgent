@@ -3,8 +3,10 @@ from typing import Callable
 
 from . import photography
 from .devices import Devices
-from .hud import lines_from_words
-from .observation import ground_speed, listed_actor, summarize
+from ..story.acquaintances import Acquaintances
+from ..story.detour import go_around
+from ..story.story_steps import VERBS as STORY_VERBS, StorySteps
+from .observation import ground_speed, summarize
 from .script import Step
 from .steering import Steering
 from .teaching import DEFAULT_TIMEOUT_SECONDS, teach_peer
@@ -18,10 +20,14 @@ GOTO_TIMEOUT_SECONDS = 30.0
 RESYNCHRONIZE_AFTER_SECONDS = 0.05
 SPEED_SAMPLE_SECONDS = 0.1
 ACTORS_IN_STATE = 4
-APPROACH_STANDOFF_M = 2.0
+CONFIRMING_CONTROLS = frozenset({"a", "start"})
 
 
 class Aborted(Exception):
+    pass
+
+
+class ConfirmRefused(Exception):
     pass
 
 
@@ -32,6 +38,7 @@ class ScriptRun:
         bridge,
         interrupted_within: Callable[[float], bool],
         clock: Callable[[], float],
+        acquaintances: Acquaintances | None = None,
     ) -> None:
         self._devices = devices
         self._pad = devices.pad
@@ -42,6 +49,11 @@ class ScriptRun:
         self._clock = clock
         self._cursor = clock()
         self._steering = Steering(bridge.read_state, devices.pad, self.pause, clock)
+        self._people = acquaintances or Acquaintances()
+        self._story = StorySteps(
+            devices, bridge, self._steering, self.pause, clock, self._people
+        )
+        self._hud_read_since_confirm = False
 
     def pause(self, seconds: float) -> None:
         now = self._clock()
@@ -53,16 +65,35 @@ class ScriptRun:
             raise Aborted("aborted")
 
     def execute(self, step: Step) -> object:
+        if step.verb in STORY_VERBS:
+            self._hud_read_since_confirm = True
+            return getattr(self._story, step.verb)(step)
         return getattr(self, f"_{step.verb}")(step)
 
+    def _refuse_blind_confirm(self, names: tuple) -> None:
+        if not CONFIRMING_CONTROLS.intersection(names):
+            return
+        seen = self._story.last_hud if self._hud_read_since_confirm else None
+        if seen and seen["exit_prompt"]:
+            raise ConfirmRefused(
+                "the screen shows an exit prompt; press b to cancel it, then read hud"
+            )
+        if self._bridge.read_state().get("paused") and seen is None:
+            raise ConfirmRefused(
+                "the game is paused by a menu or tutorial; read hud in this script before confirming"
+            )
+        self._hud_read_since_confirm = False
+
     def _set_controls(self, names: tuple, pressed: bool) -> None:
+        if pressed:
+            self._refuse_blind_confirm(names)
         for name in names:
             self._pad.set_control(name, pressed)
 
     def _press(self, step: Step) -> None:
         hold = step.values[1] if len(step.values) > 1 else PRESS_HOLD_SECONDS
         gap = step.values[2] if len(step.values) > 2 else PRESS_GAP_SECONDS
-        self._pad.set_control(step.values[0], True)
+        self._set_controls((step.values[0],), True)
         self.pause(hold)
         self._pad.set_control(step.values[0], False)
         self.pause(gap)
@@ -116,13 +147,12 @@ class ScriptRun:
     def _goto(self, step: Step) -> dict:
         self._set_controls(step.rest, True)
         try:
-            return asdict(
-                self._steering.go_to(
-                    step.values[0],
-                    step.values[1],
-                    step.options.get("tolerance", GOTO_TOLERANCE_M),
-                    step.options.get("timeout", GOTO_TIMEOUT_SECONDS),
-                )
+            return go_around(
+                self._steering,
+                step.values[0],
+                step.values[1],
+                step.options.get("tolerance", GOTO_TOLERANCE_M),
+                step.options.get("timeout", GOTO_TIMEOUT_SECONDS),
             )
         finally:
             self._set_controls(step.rest, False)
@@ -135,8 +165,11 @@ class ScriptRun:
         before = self._bridge.read_state()
         self.pause(SPEED_SAMPLE_SECONDS)
         after = self._bridge.read_state()
+        described = summarize(after)
+        if isinstance(described.get("actors"), list):
+            described["actors"] = self._people.annotate(described["actors"])
         return {
-            **summarize(after),
+            **described,
             "ground_speed_m_per_second": ground_speed(
                 before, after, SPEED_SAMPLE_SECONDS
             ),
@@ -154,26 +187,6 @@ class ScriptRun:
         return photography.take(
             step, self._devices.camera, self._bridge.read_state, self.pause
         )
-
-    def _hud(self, step: Step) -> list[dict]:
-        frame = self._devices.camera.capture()
-        left, top = 0, 0
-        if "crop" in step.options:
-            left, top, width, height = step.options["crop"]
-            frame = frame.crop((left, top, left + width, top + height))
-        return lines_from_words(self._devices.read_words(frame), left, top)
-
-    def _approach(self, step: Step) -> dict:
-        actor = listed_actor(self._bridge.read_state(), step.values[0])
-        self._set_controls(step.rest, True)
-        try:
-            return self._steering.approach(
-                actor["position"],
-                step.options.get("distance", APPROACH_STANDOFF_M),
-                step.options.get("timeout", GOTO_TIMEOUT_SECONDS),
-            )
-        finally:
-            self._set_controls(step.rest, False)
 
     def _teach(self, step: Step) -> dict:
         with self._devices.open_peer() as peer:

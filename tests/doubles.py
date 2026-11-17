@@ -1,6 +1,9 @@
+from PIL import Image
+
 from crimson_desert_agent.game.desktop import DesktopError
 from crimson_desert_agent.scripting.devices import Devices
 from crimson_desert_agent.scripting.engine import Engine
+from crimson_desert_agent.story.screen_lines import Word
 from tests.simulated_game import SimulatedGame
 
 
@@ -28,7 +31,7 @@ class RecordingCamera:
         self.written: list[tuple] = []
 
     def capture(self):
-        return type("Frame", (), {"size": (1600, 900)})()
+        return Image.new("RGB", (1600, 900))
 
     def write(self, path, frames, boxes, scale, brightness) -> dict:
         self.written.append((path, len(frames), boxes, scale, brightness))
@@ -58,6 +61,8 @@ def engine_for(
     camera=None,
     peer=None,
     read_words=None,
+    read_start_actions=None,
+    read_marker=None,
 ) -> Engine:
     devices = Devices(
         game,
@@ -67,5 +72,28 @@ def engine_for(
         FixedLog(),
         lambda: peer or RecordingPeer(),
         read_words or (lambda frame: []),
+        read_start_actions or (lambda last: {"ok": True, "start_actions": []}),
+        read_marker or (lambda frame: None),
     )
     return Engine(devices, game.interrupted_within, game.clock)
+
+
+def words(text: str, x: int, y: int) -> list[Word]:
+    placed, left = [], x
+    for part in text.split():
+        placed.append(Word(part, left, y, left + 9 * len(part), 92.0))
+        left += 9 * len(part) + 8
+    return placed
+
+
+def quest_block(objective: str) -> list[Word]:
+    return words("Unfamiliar Lands", 60, 540) + words(objective, 76, 575)
+
+
+class ScriptedScreen:
+    def __init__(self, at_time) -> None:
+        self.at_time = at_time
+        self.game = None
+
+    def __call__(self, frame) -> list[Word]:
+        return self.at_time(self.game.now - 100.0)

@@ -1,4 +1,5 @@
 import io
+import os
 from PIL import Image, ImageEnhance
 
 from .desktop import DesktopError, game_window_geometry, run_bytes
@@ -44,6 +45,7 @@ def write(
         sheet.paste(tile, (offset, 0))
         offset += tile.width
     try:
+        os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
         sheet.save(path, quality=JPEG_QUALITY)
     except (OSError, ValueError) as error:
         raise DesktopError(f"could not write {path}: {error}") from error

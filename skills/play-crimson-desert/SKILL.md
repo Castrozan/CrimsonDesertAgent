@@ -6,7 +6,7 @@ description: Play Crimson Desert through the crimson-desert MCP tools - observe 
 ### One script per decision
 
 Every tool call costs a model turn, so the loop is as fast as the calls are few. Put a whole intention into one
-`run_script` call: observe, act, observe again, as in `focus; state; turn 90; goto -9840 -2800 rb; press rt; state`.
+`run_script` call: observe, act, observe again, as in `focus; hud; status; goto -9840 -2800 a; hud`.
 The `run_script` tool description holds the step grammar and the control names; do not guess a step.
 
 Start each script with `focus`: input reaches the game only while its window has focus, and it silently does nothing
@@ -46,22 +46,35 @@ the first action: a crouched character moves at walking pace under every input.
 
 ### Follow the story from text, not pictures
 
-`hud` returns the text on screen as lines with window pixel positions: the quest objective on the left, the guide line
-at the bottom, button prompts such as `Talk`, and name labels. A text answer costs one model turn; a screenshot costs
-two and more tokens. Begin every story decision with `focus; hud; status` and act on the objective it names.
+`hud` returns the screen as fields: `quest`, `objectives`, `guide` (the current instruction), `prompt`, `speech`
+(subtitles, speaker first), `marker_m` and `marker_bearing_degrees` for the quest marker on the minimap, and `other`
+text with window positions. Begin every story decision with `focus; hud; status` and do what `guide` says.
 
-Actors in `status` carry no names. To find a named person, visit the nearest characters in one script, as in
-`approach KEY_1; hud; approach KEY_2; hud`, and pick the stop whose `hud` shows the name or a `Talk` prompt.
-`approach` walks to two metres from the actor and turns the camera onto it.
+The quest marker is the target. `marker` walks to it in legs, re-reading the minimap each leg and sidestepping
+obstacles; follow it with `hud; status`. Progress is the `guide`, `quest` or `objectives` text changing, and often
+only `guide` changes.
 
-At a `Talk` prompt hold `x` for one second, then advance dialogue with `press a` and read `hud` again until the
-objective changes. Take a screenshot only when `hud` returns nothing useful, such as for a map or a cutscene.
+To speak with someone use `talk KEY_OR_NAME`: it approaches, holds the talk button, then waits without pressing until
+the conversation ends, and returns the speaker, the lines spoken, and the quest and guide text before and after.
+`approach` alone reports `talk_prompt` and any name it read; `status` then lists that actor with `name` and `talked`.
+
+When `hud` returns `quest: null`, a cutscene, dialogue or tutorial is playing. Press nothing: loop `hud; wait 4` and
+read `speech` until `quest` returns. Holding or repeating `a` there skips into prompts that can end the game. Press
+`a` once only when `prompt` is `Next` on three reads in a row.
+
+Never hold an attack button while walking. Take a screenshot only when `hud` gives nothing useful, such as for a map.
+
+### Proving an attack
+
+`prove_attack rb` presses the control, waits for the packet recording to flush, and returns the action hashes that
+were absent from the 30 seconds before it. Idle for a few seconds first so the baseline is quiet, then pair it with
+`press rb 0.1 0; shot PATH burst=6 every=0.1` in one script for the picture.
 
 ### Never confirm an exit
 
 A stray `b`, `start` or window close can raise the game's exit prompt, and the next `a` confirms it and ends the
-game. In any menu, tutorial or dialogue box, read `hud` before each press. When the text mentions exit, quit or
-the title screen, press `b` to cancel and read `hud` again; never press `a` there.
+game. The engine refuses `a` and `start` when the last `hud` shows exit, quit or title words, and while the game is
+paused unless `hud` was read in the same script since the last confirm. On `exit_prompt: true` press `b`, then `hud`.
 
 ### Controls
 

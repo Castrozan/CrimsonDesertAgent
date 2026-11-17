@@ -136,21 +136,28 @@ class Steering:
             self._sticks.set_left_stick(0.0, 0.0)
         return self._result(reason, distance, started)
 
+    def position(self) -> GroundVector:
+        return self._world()[0]
+
     def approach(
-        self, actor_position: list[float], standoff_m: float, timeout_seconds: float
+        self,
+        actor_position: list[float],
+        standoff_m: float,
+        timeout_seconds: float,
+        walk,
     ) -> dict:
         actor = GroundVector.from_world(actor_position)
-        offset = actor.minus(self._world()[0])
-        walk = None
+        offset = actor.minus(self.position())
+        reason = "already near"
         if offset.length() > standoff_m + APPROACH_TOLERANCE_M:
             direction = offset.normalized()
-            walk = self.go_to(
+            reason = walk(
                 actor.x - direction.x * standoff_m,
                 actor.z - direction.z * standoff_m,
                 APPROACH_TOLERANCE_M,
                 timeout_seconds,
-            )
-        offset = actor.minus(self._world()[0])
+            )["reason"]
+        offset = actor.minus(self.position())
         turn = self.turn_to(
             heading_degrees(offset),
             APPROACH_FACING_TOLERANCE_DEGREES,
@@ -158,8 +165,8 @@ class Steering:
         )
         return {
             "distance_m": round(offset.length(), 2),
-            "facing": turn.arrived,
-            "walk": walk.reason if walk else "already near",
+            "facing": turn.arrived and reason in ("already near", "arrived"),
+            "walk": reason,
         }
 
     def turn_to(

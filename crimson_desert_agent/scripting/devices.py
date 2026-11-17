@@ -11,3 +11,5 @@ class Devices:
     game_log: object
     open_peer: Callable[[], ContextManager]
     read_words: Callable[[object], list]
+    read_start_actions: Callable[[int], dict]
+    read_marker: Callable[[object], dict | None]

@@ -5,7 +5,8 @@ import socketserver
 import threading
 import time
 
-from .game import desktop, screenshot, text_reader
+from .development.packet_recording import read_start_actions
+from .game import desktop, minimap, screenshot, text_reader
 from .game.bridge_client import BridgeSession
 from .peer import open_peer
 from .scripting.devices import Devices
@@ -15,6 +16,7 @@ from .settings import (
     BRIDGE_HOST,
     BRIDGE_PORT,
     BRIDGE_TIMEOUT_SECONDS,
+    GAME_DIRECTORY,
     GAME_LOG_PATH,
     SOCKET_PATH,
 )
@@ -41,6 +43,10 @@ class Daemon:
                 game_log=GameLog(GAME_LOG_PATH),
                 open_peer=open_peer,
                 read_words=text_reader.read_words,
+                read_marker=minimap.read_marker,
+                read_start_actions=lambda last: read_start_actions(
+                    GAME_DIRECTORY, None, last
+                ),
             ),
             self._abort.wait,
             time.monotonic,

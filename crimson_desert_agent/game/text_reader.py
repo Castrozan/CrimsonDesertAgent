@@ -1,7 +1,7 @@
 import pytesseract
 from PIL import Image, ImageOps
 
-from ..scripting.hud import Word
+from ..story.screen_lines import Word
 from .desktop import DesktopError
 
 UPSCALE = 2

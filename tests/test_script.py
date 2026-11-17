@@ -177,9 +177,11 @@ class ParseTest(unittest.TestCase):
 
     def test_every_verb_has_a_handler(self):
         from crimson_desert_agent.scripting.script_run import ScriptRun
+        from crimson_desert_agent.story.story_steps import StorySteps
 
         for verb in VERBS:
-            self.assertTrue(callable(getattr(ScriptRun, f"_{verb}")), verb)
+            handler = getattr(StorySteps, verb, None) or getattr(ScriptRun, f"_{verb}")
+            self.assertTrue(callable(handler), verb)
 
 
 if __name__ == "__main__":
