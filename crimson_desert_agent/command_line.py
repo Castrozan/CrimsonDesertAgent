@@ -2,6 +2,7 @@ import argparse
 import json
 import time
 
+from .game.session import adopt_graphical_session
 from .scripting.script import USAGE
 
 
@@ -171,5 +172,6 @@ def parser() -> argparse.ArgumentParser:
 
 
 def main(arguments: list[str]) -> int:
+    adopt_graphical_session()
     parsed = parser().parse_args(arguments)
     return parsed.handler(parsed)

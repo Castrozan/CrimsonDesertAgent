@@ -1,11 +1,11 @@
 import os
-import subprocess
 import time
 from typing import Callable
 
 from .. import client
 from ..game import pointer
 from ..game.bridge_client import BridgeSession
+from ..game.desktop import hyprland
 from ..game.line_client import LineServiceUnavailable
 from ..settings import (
     BRIDGE_HOST,
@@ -77,13 +77,7 @@ def rotate_log() -> None:
 def start_game(say: Callable[[str], None]) -> None:
     if client.daemon_answers():
         client.request({"quit": True}, start_if_absent=False)
-    subprocess.Popen(
-        ["steam", f"steam://rungameid/{STEAM_APPLICATION}"],
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        start_new_session=True,
-    )
+    hyprland(f"dispatch exec steam steam://rungameid/{STEAM_APPLICATION}")
     deadline = time.monotonic() + STEAM_START_SECONDS
     while time.monotonic() < deadline and not processes.is_running(GAME_PROCESS):
         if "failed" in steam_launch_step().lower():
