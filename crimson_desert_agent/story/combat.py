@@ -6,11 +6,11 @@ TICK_SECONDS = 0.1
 THREAT_RANGE_M = 6.0
 GUARD_RANGE_M = 4.5
 STRIKE_RANGE_M = 2.3
-STRIKE_EVERY_SECONDS = 2.5
-QUIET_BEFORE_STRIKE_SECONDS = 1.0
+STRIKE_EVERY_SECONDS = 1.1
+QUIET_BEFORE_STRIKE_SECONDS = 0.4
+GUARD_AFTER_HIT_SECONDS = 0.8
+COMBO_STRIKES = 3
 STRIKE_LUNGE_M = 2.5
-FACE_EVERY_SECONDS = 1.2
-FACE_NUDGE_SECONDS = 0.12
 RETURN_TIMEOUT_SECONDS = 6.0
 
 
@@ -44,7 +44,7 @@ def hold_ground(
     leash_m: float,
 ) -> dict:
     started = clock()
-    last_strike = last_face = last_damage = started - 10.0
+    last_strike = last_damage = started - 10.0
     tally = {
         "strikes": 0,
         "damage_taken": 0.0,
@@ -81,30 +81,31 @@ def hold_ground(
                 pad.set_control("lb", False)
                 pause(TICK_SECONDS)
                 continue
-            pad.set_control("lb", True)
             target = GroundVector.from_world(near[0]["position"])
             now = clock()
-            if now - last_face >= FACE_EVERY_SECONDS:
-                camera = state["camera"]
-                nudge = stick_toward(
+            pad.set_control("lb", now - last_damage < GUARD_AFTER_HIT_SECONDS)
+            reach = target.minus(here)
+            camera = state["camera"]
+            if near[0]["distance"] > STRIKE_RANGE_M and reach.length() > 0:
+                closing = stick_toward(
                     here,
                     target,
                     GroundVector.from_world(camera["forward"]),
                     GroundVector.from_world(camera["right"]),
                     1.0,
-                    0.5,
+                    1.0,
                 )
-                pad.set_left_stick(nudge.right * 0.5, nudge.forward * 0.5)
-                pause(FACE_NUDGE_SECONDS)
-                pad.set_left_stick(0.0, 0.0)
-                last_face = now
-            reach = target.minus(here)
-            if (
-                near[0]["distance"] <= STRIKE_RANGE_M
-                and now - last_strike >= STRIKE_EVERY_SECONDS
+                ahead = reach.normalized()
+                if hazards.near(here.x + ahead.x * 2.0, here.z + ahead.z * 2.0):
+                    pad.set_left_stick(0.0, 0.0)
+                else:
+                    pad.set_left_stick(closing.right, closing.forward)
+            elif (
+                now - last_strike >= STRIKE_EVERY_SECONDS
                 and now - last_damage >= QUIET_BEFORE_STRIKE_SECONDS
                 and reach.length() > 0
             ):
+                pad.set_left_stick(0.0, 0.0)
                 ahead = reach.normalized()
                 if hazards.near(
                     here.x + ahead.x * STRIKE_LUNGE_M, here.z + ahead.z * STRIKE_LUNGE_M
@@ -112,11 +113,13 @@ def hold_ground(
                     tally["strikes_withheld_near_fire"] += 1
                 else:
                     pad.set_control("lb", False)
-                    tap(pad, "rb", pause, 0.08)
-                    pause(0.35)
-                    pad.set_control("lb", True)
-                    tally["strikes"] += 1
+                    for _ in range(COMBO_STRIKES):
+                        tap(pad, "rb", pause, 0.08)
+                        pause(0.22)
+                    tally["strikes"] += COMBO_STRIKES
                 last_strike = now
+            else:
+                pad.set_left_stick(0.0, 0.0)
             pause(TICK_SECONDS)
     finally:
         pad.set_control("lb", False)

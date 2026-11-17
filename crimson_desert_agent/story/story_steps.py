@@ -158,5 +158,5 @@ class StorySteps:
             self._clock,
             (step.values[0], step.values[1]),
             step.options.get("seconds", 20.0),
-            step.options.get("leash", 4.0),
+            step.options.get("leash", 8.0),
         )

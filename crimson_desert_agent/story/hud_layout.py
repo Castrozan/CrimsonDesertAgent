@@ -7,6 +7,10 @@ DATE_LINE = re.compile(r"^Day \d+")
 MINIMAP_BLOCK = (0.0, 0.76, 0.18, 1.0)
 GUIDE_BLOCK = (0.15, 0.90, 0.85, 1.0)
 SPEECH_BLOCK = (0.15, 0.72, 0.85, 0.90)
+MINIMAP_PIXELS_PER_METRE = 3.2
+MINIMAP_CENTRE = (155.0, 944.0)
+LABEL_CENTRE = (17.0, 8.0)
+EDGE_DISTANCE = re.compile(r"^([0-9lO]{1,4})m$")
 PROMPT_ACTIONS = (
     "Talk",
     "Next",
@@ -31,6 +35,12 @@ def inside(line: dict, block: tuple, width: int, height: int) -> bool:
     ] < right * REFERENCE_HEIGHT * 16 / 9 * scale and (
         top * height <= line["y"] < bottom * height
     )
+
+
+def marker_metres(marker: dict) -> int:
+    if marker["metres"] is not None:
+        return marker["metres"]
+    return round(math.hypot(marker["right"], marker["down"]) / MINIMAP_PIXELS_PER_METRE)
 
 
 def marker_bearing(marker: dict, camera_heading_degrees: float) -> float:
@@ -65,10 +75,24 @@ def prompt_in(lines: list[dict]) -> dict | None:
     return None
 
 
+def marker_from_label(lines: list[dict], width: int, height: int) -> dict | None:
+    scale = height / REFERENCE_HEIGHT
+    for line in lines:
+        match = EDGE_DISTANCE.match(line["text"].replace(" ", ""))
+        if match and inside(line, MINIMAP_BLOCK, width, height):
+            return {
+                "right": line["x"] / scale + LABEL_CENTRE[0] - MINIMAP_CENTRE[0],
+                "down": line["y"] / scale + LABEL_CENTRE[1] - MINIMAP_CENTRE[1],
+                "metres": int(match.group(1).replace("l", "1").replace("O", "0")),
+            }
+    return None
+
+
 def describe(
     lines: list[dict], frame_size: tuple[int, int], state: dict, marker: dict | None
 ) -> dict:
     width, height = frame_size
+    marker = marker or marker_from_label(lines, width, height)
     peer_labels = [line for line in lines if PEER_LABEL.search(line["text"])]
     lines = [
         line
@@ -95,7 +119,7 @@ def describe(
         "speech": [
             line["text"] for line in lines if inside(line, SPEECH_BLOCK, width, height)
         ],
-        "marker_m": marker["metres"] if marker else None,
+        "marker_m": marker_metres(marker) if marker else None,
         "marker_bearing_degrees": None,
         "place": place,
         "other": [
@@ -113,10 +137,10 @@ def describe(
     if marker and heading is not None:
         report["marker_bearing_degrees"] = marker_bearing(marker, heading)
         position = state.get("position")
-        if position and marker["metres"] is not None:
+        if position:
             bearing = math.radians(report["marker_bearing_degrees"])
             report["marker_position"] = [
-                round(position[0] + marker["metres"] * math.sin(bearing), 1),
-                round(position[2] + marker["metres"] * math.cos(bearing), 1),
+                round(position[0] + marker_metres(marker) * math.sin(bearing), 1),
+                round(position[2] + marker_metres(marker) * math.cos(bearing), 1),
             ]
     return report

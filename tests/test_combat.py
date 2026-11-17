@@ -31,17 +31,20 @@ def game_with_enemy(distance: float, hits: bool = False) -> SimulatedGame:
 
 
 class HoldGroundTest(unittest.TestCase):
-    def test_guards_near_an_enemy_strikes_in_reach_and_ends_idle(self):
+    def test_strikes_an_enemy_in_reach_and_ends_idle(self):
         game = game_with_enemy(2.0)
         result = engine_for(game).run("fight 0 0 seconds=12")["steps"][0]["result"]
         self.assertEqual(result["ended"], "time")
-        self.assertGreaterEqual(result["strikes"], 3)
-        held = sum(
-            1 for _, name, pressed in game.events if name == "lb" and pressed is True
-        )
-        self.assertGreaterEqual(held, 1)
+        self.assertGreaterEqual(result["strikes"], 9)
         self.assertTrue(game.is_idle())
-        self.assertLessEqual(math.hypot(game.position[0], game.position[2]), 5.0)
+
+    def test_guards_right_after_taking_a_hit(self):
+        game = game_with_enemy(2.0, hits=True)
+        result = engine_for(game).run("fight 0 0 seconds=6")["steps"][0]["result"]
+        self.assertGreater(result["damage_taken"], 0)
+        self.assertTrue(
+            any(name == "lb" and pressed is True for _, name, pressed in game.events)
+        )
 
     def test_does_not_strike_an_enemy_out_of_reach(self):
         result = engine_for(game_with_enemy(4.0)).run("fight 0 0 seconds=6")["steps"][

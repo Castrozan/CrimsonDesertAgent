@@ -56,6 +56,10 @@ class HudTest(unittest.TestCase):
         self.assertAlmostEqual(report["marker_bearing_degrees"], 330.0, delta=8.0)
         self.assertEqual(report["place"], ["Day 14 Sun 11:10 PM", "Hills of No Return"])
         self.assertFalse(report["exit_prompt"])
+        unlabelled = describe(
+            lines, (1920, 1080), state, {"right": 0.0, "down": -64.0, "metres": None}
+        )
+        self.assertEqual(unlabelled["marker_m"], 20)
 
     def test_hud_step_reads_a_crop_in_window_positions(self):
         sizes = []
