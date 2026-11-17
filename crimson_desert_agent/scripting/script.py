@@ -107,6 +107,7 @@ VERBS = {
         optional=(control,),
         options={"wait": seconds},
     ),
+    "hazard": Signature("hazard X Z", (number, number)),
     "teach": Signature("teach [timeout=SECONDS]", options={"timeout": seconds}),
 }
 USAGE = "Steps separated by ';' or newlines: " + " | ".join(

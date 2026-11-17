@@ -183,6 +183,10 @@ class ScriptRun:
             step, self._devices.camera, self._bridge.read_state, self.pause
         )
 
+    def _hazard(self, step: Step) -> list:
+        self._hazards.places.append((step.values[0], step.values[1]))
+        return self._hazards.places
+
     def _teach(self, step: Step) -> dict:
         with self._devices.open_peer() as peer:
             return teach_peer(
