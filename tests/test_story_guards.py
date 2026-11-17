@@ -185,5 +185,11 @@ class FireHazardTest(unittest.TestCase):
         )
 
 
+class MarkedHazardTest(unittest.TestCase):
+    def test_a_marked_hazard_is_refused_as_a_target(self):
+        answer = engine_for(SimulatedGame()).run("hazard 5 5; goto 5 6")
+        self.assertIn("refused", answer["steps"][1]["result"]["reason"])
+
+
 if __name__ == "__main__":
     unittest.main()
