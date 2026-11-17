@@ -57,6 +57,12 @@ Actors in `status` carry no names. To find a named person, visit the nearest cha
 At a `Talk` prompt hold `x` for one second, then advance dialogue with `press a` and read `hud` again until the
 objective changes. Take a screenshot only when `hud` returns nothing useful, such as for a map or a cutscene.
 
+### Never confirm an exit
+
+A stray `b`, `start` or window close can raise the game's exit prompt, and the next `a` confirms it and ends the
+game. In any menu, tutorial or dialogue box, read `hud` before each press. When the text mentions exit, quit or
+the title screen, press `b` to cancel and read `hud` again; never press `a` there.
+
 ### Controls
 
 Default pad layout: `rb` light attack, `rt` heavy attack, `lb` guard, `b` dodge, `x` jump, `a` sprint while moving
