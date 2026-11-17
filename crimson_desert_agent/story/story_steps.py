@@ -1,6 +1,7 @@
 from ..scripting.observation import ActorNotListed, listed_actor
 from .acquaintances import Acquaintances, name_in
 from .attack_proof import DEFAULT_FLUSH_SECONDS, prove
+from .climbing import climb
 from .combat import hold_ground
 from .conversation import DEFAULT_TIMEOUT_SECONDS, converse
 from .detour import go_around
@@ -13,7 +14,7 @@ MARKER_ARRIVAL_M = 4
 MARKER_LEG_M = 12.0
 MARKER_LEGS = 8
 MARKER_REREADS = 3
-VERBS = ("hud", "approach", "talk", "marker", "prove_attack", "fight")
+VERBS = ("hud", "approach", "talk", "marker", "prove_attack", "fight", "climb")
 
 
 class StorySteps:
@@ -165,4 +166,13 @@ class StorySteps:
             (step.values[0], step.values[1]),
             step.options.get("seconds", 20.0),
             step.options.get("leash", 8.0),
+        )
+
+    def climb(self, step) -> dict:
+        return climb(
+            self._devices.pad,
+            self._bridge.read_state,
+            self._pause,
+            self._clock,
+            step.options.get("seconds", 10.0),
         )

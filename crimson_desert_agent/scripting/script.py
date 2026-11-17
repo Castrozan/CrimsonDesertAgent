@@ -112,6 +112,7 @@ VERBS = {
         (number, number),
         options={"seconds": seconds, "leash": positive},
     ),
+    "climb": Signature("climb [seconds=12]", options={"seconds": seconds}),
     "hazard": Signature("hazard X Z", (number, number)),
     "teach": Signature("teach [timeout=SECONDS]", options={"timeout": seconds}),
 }
