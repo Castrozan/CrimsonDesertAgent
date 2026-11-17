@@ -29,6 +29,7 @@ WORLD_TIMEOUT_SECONDS = float(
 )
 GAME_UP_LINE = "Late init: game is up"
 PROCESS_START_GRACE_SECONDS = 120.0
+STEAM_START_SECONDS = 180.0
 
 
 class LaunchFailed(Exception):
@@ -43,13 +44,21 @@ def in_world() -> bool:
         return False
 
 
-def steam_says(*words: str) -> str | None:
+def steam_launch_step() -> str:
     try:
         with open(STEAM_CONSOLE_LOG, errors="replace") as log_file:
-            tail = log_file.readlines()[-2:]
+            steps = [
+                line
+                for line in log_file.readlines()[-400:]
+                if "LaunchApp" in line or "launch failed" in line.lower()
+            ]
     except OSError:
-        return None
-    return next((word for word in words if any(word in line for line in tail)), None)
+        return ""
+    return steps[-1] if steps else ""
+
+
+def waiting_on_shader_dialog() -> bool:
+    return "waiting for user response to ProcessingShaderCache" in steam_launch_step()
 
 
 def log_has(text: str) -> bool:
@@ -75,17 +84,14 @@ def start_game(say: Callable[[str], None]) -> None:
         stderr=subprocess.DEVNULL,
         start_new_session=True,
     )
-    for _ in range(30):
-        if processes.is_running(GAME_PROCESS) or steam_says(
-            "ProcessingShaderCa", "Failed"
-        ):
-            break
-        time.sleep(2)
-    if steam_says("Failed"):
-        raise LaunchFailed("Steam reported that the launch failed")
-    if steam_says("ProcessingShaderCa"):
-        say("skipping the shader cache dialog")
-        pointer.click(*SHADER_DIALOG_SKIP_POINT)
+    deadline = time.monotonic() + STEAM_START_SECONDS
+    while time.monotonic() < deadline and not processes.is_running(GAME_PROCESS):
+        if "failed" in steam_launch_step().lower():
+            raise LaunchFailed(f"Steam reported: {steam_launch_step().strip()}")
+        if waiting_on_shader_dialog():
+            say("skipping the shader cache dialog")
+            pointer.click(*SHADER_DIALOG_SKIP_POINT)
+        time.sleep(3)
 
 
 def wait_for_world(say: Callable[[str], None]) -> None:

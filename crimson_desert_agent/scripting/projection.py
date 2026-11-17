@@ -1,7 +1,7 @@
 import math
 from dataclasses import dataclass
 
-DEFAULT_VERTICAL_FIELD_OF_VIEW_DEGREES = 50.0
+DEFAULT_VERTICAL_FIELD_OF_VIEW_DEGREES = 40.0
 
 
 @dataclass(frozen=True)
