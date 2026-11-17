@@ -1,6 +1,11 @@
 import math
 
-from ..scripting.navigation import GroundVector, stick_toward
+from ..scripting.navigation import (
+    GroundVector,
+    heading_degrees,
+    stick_toward,
+    turn_degrees,
+)
 
 TICK_SECONDS = 0.1
 THREAT_RANGE_M = 6.0
@@ -10,6 +15,9 @@ STRIKE_EVERY_SECONDS = 1.1
 QUIET_BEFORE_STRIKE_SECONDS = 0.4
 GUARD_AFTER_HIT_SECONDS = 0.8
 COMBO_STRIKES = 3
+AIMED_WITHIN_DEGREES = 35.0
+CAMERA_SETTLED_DEGREES = 10.0
+CAMERA_FOCUS_STICK = 0.7
 STRIKE_LUNGE_M = 2.5
 RETURN_TIMEOUT_SECONDS = 6.0
 
@@ -45,7 +53,9 @@ def hold_ground(
 ) -> dict:
     started = clock()
     last_strike = last_damage = started - 10.0
+    focus_key = None
     tally = {
+        "targets": 0,
         "strikes": 0,
         "damage_taken": 0.0,
         "returns_to_anchor": 0,
@@ -79,10 +89,35 @@ def hold_ground(
                 or not state.get("camera")
             ):
                 pad.set_control("lb", False)
+                pad.set_right_stick(0.0, 0.0)
                 pause(TICK_SECONDS)
                 continue
-            target = GroundVector.from_world(near[0]["position"])
+            focused = next(
+                (actor for actor in near if actor.get("key") == focus_key), near[0]
+            )
+            if focused.get("key") != focus_key:
+                focus_key = focused.get("key")
+                tally["targets"] += 1
+            near = [focused]
+            target = GroundVector.from_world(focused["position"])
             now = clock()
+            off_centre = (
+                turn_degrees(
+                    heading_degrees(
+                        GroundVector.from_world(state["camera"]["forward"])
+                    ),
+                    heading_degrees(target.minus(here)),
+                )
+                if target.minus(here).length() > 0
+                else 0.0
+            )
+            aimed = abs(off_centre) <= AIMED_WITHIN_DEGREES
+            pad.set_right_stick(
+                0.0
+                if abs(off_centre) <= CAMERA_SETTLED_DEGREES
+                else math.copysign(CAMERA_FOCUS_STICK, off_centre),
+                0.0,
+            )
             pad.set_control("lb", now - last_damage < GUARD_AFTER_HIT_SECONDS)
             reach = target.minus(here)
             camera = state["camera"]
@@ -101,7 +136,8 @@ def hold_ground(
                 else:
                     pad.set_left_stick(closing.right, closing.forward)
             elif (
-                now - last_strike >= STRIKE_EVERY_SECONDS
+                aimed
+                and now - last_strike >= STRIKE_EVERY_SECONDS
                 and now - last_damage >= QUIET_BEFORE_STRIKE_SECONDS
                 and reach.length() > 0
             ):
@@ -124,6 +160,7 @@ def hold_ground(
     finally:
         pad.set_control("lb", False)
         pad.set_left_stick(0.0, 0.0)
+        pad.set_right_stick(0.0, 0.0)
     return {
         "ended": ended,
         "seconds": round(clock() - started, 1),

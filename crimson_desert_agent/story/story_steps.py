@@ -12,6 +12,7 @@ WALK_TIMEOUT_SECONDS = 30.0
 MARKER_ARRIVAL_M = 4
 MARKER_LEG_M = 12.0
 MARKER_LEGS = 8
+MARKER_REREADS = 3
 VERBS = ("hud", "approach", "talk", "marker", "prove_attack", "fight")
 
 
@@ -99,6 +100,11 @@ class StorySteps:
         legs = []
         for _ in range(MARKER_LEGS):
             seen = self.hud()
+            for _ in range(MARKER_REREADS if legs else 0):
+                if seen["marker_m"] is not None:
+                    break
+                self._pause(1.0)
+                seen = self.hud()
             if seen["quest"] is None:
                 return {
                     "arrived": False,
