@@ -28,6 +28,7 @@ WORLD_TIMEOUT_SECONDS = float(
     os.environ.get("CRIMSON_DESERT_WORLD_TIMEOUT_SECONDS", "900")
 )
 GAME_UP_LINE = "Late init: game is up"
+PROCESS_START_GRACE_SECONDS = 120.0
 
 
 class LaunchFailed(Exception):
@@ -89,22 +90,21 @@ def start_game(say: Callable[[str], None]) -> None:
 
 def wait_for_world(say: Callable[[str], None]) -> None:
     deadline = time.monotonic() + WORLD_TIMEOUT_SECONDS
+    process_last_seen = time.monotonic()
     announced_up = False
     while time.monotonic() < deadline:
         if in_world():
             say("in world")
             return
+        if processes.is_running(GAME_PROCESS):
+            process_last_seen = time.monotonic()
+        elif time.monotonic() - process_last_seen > PROCESS_START_GRACE_SECONDS:
+            raise LaunchFailed(f"no game process for {PROCESS_START_GRACE_SECONDS:g} s")
         if log_has(GAME_UP_LINE):
             if not announced_up:
                 say("game is up, pressing through the title")
                 announced_up = True
             client.run_script("focus; press a 0.1 0.1")
-        elif not processes.is_running(GAME_PROCESS) and not steam_says(
-            "ProcessingShaderCa"
-        ):
-            time.sleep(10)
-            if not processes.is_running(GAME_PROCESS):
-                raise LaunchFailed("the game process is not running")
         time.sleep(5)
     raise LaunchFailed(f"the world did not load within {WORLD_TIMEOUT_SECONDS:g} s")
 
