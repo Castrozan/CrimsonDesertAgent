@@ -55,9 +55,11 @@ def game_window_focused() -> bool:
 
 
 def focus_game() -> None:
-    answer = hyprland(f"dispatch focuswindow title:^{GAME_WINDOW_TITLE}$")
-    if answer.strip() != "ok":
-        raise DesktopError(f"could not focus the game window: {answer.strip()}")
+    window = f"title:^{GAME_WINDOW_TITLE}$"
+    for command in (f"dispatch focuswindow {window}", f"dispatch alterzorder top,{window}"):
+        answer = hyprland(command).strip()
+        if answer != "ok":
+            raise DesktopError(f"Hyprland refused {command!r}: {answer}")
 
 
 def screenshot(path: str) -> None:

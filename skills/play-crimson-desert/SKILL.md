@@ -34,10 +34,19 @@ slopes, camera drift and collisions do not make them miss. Heading is degrees fr
 Read their `result`. `arrived: false` comes with `timeout`, `stuck` (an obstacle or blocked movement) or
 `not in world`. On `stuck`, sidestep or jump and retry; repeating the same `goto` fails the same way.
 
-### When state is not enough
+### Know the status before acting
 
-State covers position, health and camera only. Menus, prompts, enemies and dialogue need the `screenshot` tool, or
-`shot PATH` inside a script when the picture must be taken at an exact moment.
+Begin a task with `focus; status`: it adds ground speed, whether the game window has focus, and what the pad holds to
+the `state` fields. Use `state` inside a sequence, where its 1 ms cost matters, and `status` at decision points.
+
+State does not yet carry stance, menus, prompts, enemies or dialogue. Those need the `screenshot` tool, or `shot PATH`
+inside a script when the picture must be taken at an exact moment. Take one before the first action of a session: a
+crouched character moves at walking pace under every input and nothing in `state` says so.
+
+### Controls
+
+Default pad layout: `rb` light attack, `rt` heavy attack, `lb` guard, `b` dodge, `x` jump, `a` sprint while moving
+and confirm in menus, `start` menu, `left_stick_click` toggles crouch. Both sticks ignore deflections under 0.3.
 
 When input seems ignored, check in order: 1) the window lost focus; 2) a menu or dialogue is open; 3) the world is
 still streaming after a load, which blocks movement for a while. Probe with `state; move 0 1 0.5; state` and compare
