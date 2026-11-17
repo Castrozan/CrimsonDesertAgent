@@ -151,14 +151,15 @@ class EngineTest(unittest.TestCase):
         def newer() -> dict:
             state = plain()
             state["menu_open"] = True
-            state["actors"] = [{"key": 7, "distance": 3.5}]
+            state["actors"] = [{"key": key, "distance": key + 0.26, "position": [1.26, 2.0, 3.0]} for key in range(9)]
             state["player"]["stance"] = "crouched"
             return state
 
         game.read_state = newer
-        result = engine_for(game).run("state")["steps"][0]["result"]
-        self.assertEqual((result["menu_open"], result["actors"], result["stance"]),
-                         (True, [{"key": 7, "distance": 3.5}], "crouched"))
+        state, status = (step["result"] for step in engine_for(game).run("state; status")["steps"])
+        self.assertEqual((state["menu_open"], state["stance"], state["actors_in_range"]), (True, "crouched", 9))
+        self.assertEqual(state["actors"][0], {"key": 0, "distance": 0.3, "position": [1.3, 2.0, 3.0]})
+        self.assertEqual((len(state["actors"]), len(status["actors"])), (4, 9))
 
     def test_observation_steps_return_results(self):
         game = SimulatedGame(position=(1.0, 2.0, 3.0), camera_yaw_degrees=90.0)

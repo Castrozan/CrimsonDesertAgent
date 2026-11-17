@@ -13,6 +13,7 @@ GOTO_TOLERANCE_M = 1.0
 GOTO_TIMEOUT_SECONDS = 30.0
 RESYNCHRONIZE_AFTER_SECONDS = 0.05
 SPEED_SAMPLE_SECONDS = 0.1
+ACTORS_IN_STATE = 4
 
 
 class Aborted(Exception):
@@ -123,7 +124,7 @@ class ScriptRun:
             self._set_controls(step.rest, False)
 
     def _state(self, step: Step) -> dict:
-        return summarize(self._bridge.read_state())
+        return summarize(self._bridge.read_state(), ACTORS_IN_STATE)
 
     def _status(self, step: Step) -> dict:
         pad = self._pad.snapshot()

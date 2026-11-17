@@ -14,4 +14,4 @@ GAME_DIRECTORY = os.path.expanduser(
 )
 GAME_LOG_PATH = os.path.join(GAME_DIRECTORY, "cdmp.log")
 PEER_PORT = int(os.environ.get("CRIMSON_DESERT_PEER_PORT", "37021"))
-PEER_TIMEOUT_SECONDS = 5.0
+PEER_TIMEOUT_SECONDS = 2.0

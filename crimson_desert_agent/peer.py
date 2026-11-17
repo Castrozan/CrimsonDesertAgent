@@ -1,13 +1,14 @@
 import time
 
-from .game.line_client import LineServiceUnavailable, LineSession
+from .game.datagram_client import DatagramSession
+from .game.line_client import LineServiceUnavailable
 from .settings import BRIDGE_HOST, PEER_PORT, PEER_TIMEOUT_SECONDS
 
 MAXIMUM_WAIT_SECONDS = 120.0
 
 
-def open_peer() -> LineSession:
-    return LineSession("the peer control port", BRIDGE_HOST, PEER_PORT, PEER_TIMEOUT_SECONDS)
+def open_peer() -> DatagramSession:
+    return DatagramSession("the peer control port", BRIDGE_HOST, PEER_PORT, PEER_TIMEOUT_SECONDS)
 
 
 def wait_seconds(command: str) -> float | None:

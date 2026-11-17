@@ -46,8 +46,8 @@ async def run_script(script: str) -> dict:
 @server.tool(
     description=(
         "Drive the co-op peer, a second character that needs no game window, through the control port of "
-        "cdmp_peer's agent mode. The script is peer commands separated by ';', sent in order over one "
-        "connection; each answer comes back with its timing. 'wait SECONDS' pauses between commands. Send "
+        "cdmp_peer's agent mode. The script is peer commands separated by ';', sent in order, one "
+        "datagram each; each answer comes back with its timing. 'wait SECONDS' pauses between commands. Send "
         "'help' first: the peer lists the commands it accepts."
     )
 )

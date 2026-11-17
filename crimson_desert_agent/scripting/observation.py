@@ -21,13 +21,26 @@ SUMMARIZED_PLAYER_FIELDS = frozenset(
 )
 
 
-def summarize(state: dict) -> dict:
+def compact_actor(actor: dict) -> dict:
+    compact = dict(actor)
+    if isinstance(actor.get("position"), list):
+        compact["position"] = [round(component, 1) for component in actor["position"]]
+    if isinstance(actor.get("distance"), (int, float)):
+        compact["distance"] = round(actor["distance"], 1)
+    return compact
+
+
+def summarize(state: dict, nearest_actors: int | None = None) -> dict:
     described = with_camera_angles(state)
     player = described.get("player") or {}
     newer_fields = {key: value for key, value in described.items() if key not in SUMMARIZED_ELSEWHERE}
     newer_player_fields = {
         key: value for key, value in player.items() if key not in SUMMARIZED_PLAYER_FIELDS
     }
+    if isinstance(newer_fields.get("actors"), list):
+        actors = newer_fields["actors"]
+        newer_fields["actors"] = [compact_actor(actor) for actor in actors[:nearest_actors]]
+        newer_fields["actors_in_range"] = len(actors)
     return {
         "in_world": described.get("in_world"),
         "position": player.get("position"),
