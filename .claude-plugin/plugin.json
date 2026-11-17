@@ -2,6 +2,7 @@
   "name": "crimson-desert-agent",
   "description": "Lets an agent play Crimson Desert fast: structured game state, a virtual Xbox pad driven by timed input scripts, closed-loop camera and movement, screenshots, and launch scripts.",
   "version": "0.2.0",
+  "license": "MIT",
   "author": { "name": "Castrozan" },
   "repository": "https://github.com/Castrozan/CrimsonDesertAgent",
   "keywords": ["crimson-desert", "game", "mcp", "gamepad"]
