@@ -149,5 +149,40 @@ class AttackProofTest(unittest.TestCase):
         )
 
 
+class FireHazardTest(unittest.TestCase):
+    def burning_game(self, fire=(0.0, 10.0), radius=2.0) -> SimulatedGame:
+        game = SimulatedGame(position=(0.0, 50.0, 0.0))
+        plain = game.read_state
+        health = [300.0]
+
+        def with_fire() -> dict:
+            state = plain()
+            if (
+                (game.position[0] - fire[0]) ** 2 + (game.position[2] - fire[1]) ** 2
+            ) ** 0.5 < radius:
+                health[0] -= 4.0
+            state["player"]["health"] = health[0]
+            return state
+
+        game.read_state = with_fire
+        return game
+
+    def test_a_walk_into_fire_stops_retreats_and_later_walks_go_round(self):
+        game = self.burning_game()
+        engine = engine_for(game)
+        first = engine.run("goto 0 20; status")
+        walked = first["steps"][0]["result"]
+        self.assertTrue(walked["reason"].startswith("burning"), walked)
+        self.assertIn("retreated_to", walked)
+        self.assertEqual(len(first["steps"][1]["result"]["fire_hazards"]), 1)
+        health_after_retreat = game.read_state()["player"]["health"]
+        second = engine.run("goto 0 20")["steps"][0]["result"]
+        self.assertTrue(second["arrived"], second)
+        self.assertEqual(game.read_state()["player"]["health"], health_after_retreat)
+        self.assertIn(
+            "refused", engine.run("goto 0 8.5")["steps"][0]["result"]["reason"]
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

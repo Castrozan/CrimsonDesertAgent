@@ -7,7 +7,9 @@ from .observation import ActorNotListed
 from .photography import ActorNotInView
 from .script import ScriptError, parse
 from ..story.acquaintances import Acquaintances
-from .script_run import Aborted, ConfirmRefused, ScriptRun
+from ..story.confirm_guard import ConfirmRefused
+from ..story.hazards import Hazards
+from .script_run import Aborted, ScriptRun
 from .steering import NotInWorld
 
 
@@ -22,6 +24,7 @@ class Engine:
         self._wait = wait
         self._clock = clock
         self._acquaintances = Acquaintances()
+        self._hazards = Hazards()
 
     def run(self, script: str) -> dict:
         try:
@@ -33,7 +36,12 @@ class Engine:
         outcome: dict = {"ok": True}
         with self._devices.open_bridge() as bridge:
             run = ScriptRun(
-                self._devices, bridge, self._wait, self._clock, self._acquaintances
+                self._devices,
+                bridge,
+                self._wait,
+                self._clock,
+                self._acquaintances,
+                self._hazards,
             )
             try:
                 for step in steps:

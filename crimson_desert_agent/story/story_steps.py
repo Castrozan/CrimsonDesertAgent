@@ -16,7 +16,14 @@ VERBS = ("hud", "approach", "talk", "marker", "prove_attack")
 
 class StorySteps:
     def __init__(
-        self, devices, bridge, steering, pause, clock, acquaintances: Acquaintances
+        self,
+        devices,
+        bridge,
+        steering,
+        pause,
+        clock,
+        acquaintances: Acquaintances,
+        hazards=None,
     ) -> None:
         self._devices = devices
         self._bridge = bridge
@@ -24,6 +31,7 @@ class StorySteps:
         self._pause = pause
         self._clock = clock
         self._people = acquaintances
+        self._hazards = hazards
         self.last_hud: dict | None = None
 
     def hud(self, step=None) -> dict:
@@ -38,7 +46,7 @@ class StorySteps:
         return self.last_hud
 
     def _walk(self, x: float, z: float, tolerance: float, timeout: float) -> dict:
-        return go_around(self._steering, x, z, tolerance, timeout)
+        return go_around(self._steering, x, z, tolerance, timeout, self._hazards)
 
     def approach(self, step, standoff: float = APPROACH_STANDOFF_M) -> dict:
         key = self._people.key_for(step.values[0])

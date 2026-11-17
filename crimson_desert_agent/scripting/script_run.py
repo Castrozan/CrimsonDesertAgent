@@ -4,7 +4,9 @@ from typing import Callable
 from . import photography
 from .devices import Devices
 from ..story.acquaintances import Acquaintances
+from ..story.confirm_guard import refuse_blind_confirm
 from ..story.detour import go_around
+from ..story.hazards import Hazards
 from ..story.story_steps import VERBS as STORY_VERBS, StorySteps
 from .observation import ground_speed, summarize
 from .script import Step
@@ -20,14 +22,9 @@ GOTO_TIMEOUT_SECONDS = 30.0
 RESYNCHRONIZE_AFTER_SECONDS = 0.05
 SPEED_SAMPLE_SECONDS = 0.1
 ACTORS_IN_STATE = 4
-CONFIRMING_CONTROLS = frozenset({"a", "start"})
 
 
 class Aborted(Exception):
-    pass
-
-
-class ConfirmRefused(Exception):
     pass
 
 
@@ -39,6 +36,7 @@ class ScriptRun:
         interrupted_within: Callable[[float], bool],
         clock: Callable[[], float],
         acquaintances: Acquaintances | None = None,
+        hazards: Hazards | None = None,
     ) -> None:
         self._devices = devices
         self._pad = devices.pad
@@ -48,10 +46,18 @@ class ScriptRun:
         self._interrupted_within = interrupted_within
         self._clock = clock
         self._cursor = clock()
-        self._steering = Steering(bridge.read_state, devices.pad, self.pause, clock)
+        self._hazards = hazards or Hazards()
+        watched = self._hazards.watching(bridge.read_state, clock)
+        self._steering = Steering(watched, devices.pad, self.pause, clock)
         self._people = acquaintances or Acquaintances()
         self._story = StorySteps(
-            devices, bridge, self._steering, self.pause, clock, self._people
+            devices,
+            bridge,
+            self._steering,
+            self.pause,
+            clock,
+            self._people,
+            self._hazards,
         )
         self._hud_read_since_confirm = False
 
@@ -70,23 +76,10 @@ class ScriptRun:
             return getattr(self._story, step.verb)(step)
         return getattr(self, f"_{step.verb}")(step)
 
-    def _refuse_blind_confirm(self, names: tuple) -> None:
-        if not CONFIRMING_CONTROLS.intersection(names):
-            return
-        seen = self._story.last_hud if self._hud_read_since_confirm else None
-        if seen and seen["exit_prompt"]:
-            raise ConfirmRefused(
-                "the screen shows an exit prompt; press b to cancel it, then read hud"
-            )
-        if self._bridge.read_state().get("paused") and seen is None:
-            raise ConfirmRefused(
-                "the game is paused by a menu or tutorial; read hud in this script before confirming"
-            )
-        self._hud_read_since_confirm = False
-
     def _set_controls(self, names: tuple, pressed: bool) -> None:
-        if pressed:
-            self._refuse_blind_confirm(names)
+        seen = self._story.last_hud if self._hud_read_since_confirm else None
+        if pressed and refuse_blind_confirm(names, seen, self._bridge.read_state):
+            self._hud_read_since_confirm = False
         for name in names:
             self._pad.set_control(name, pressed)
 
@@ -153,6 +146,7 @@ class ScriptRun:
                 step.values[1],
                 step.options.get("tolerance", GOTO_TOLERANCE_M),
                 step.options.get("timeout", GOTO_TIMEOUT_SECONDS),
+                self._hazards,
             )
         finally:
             self._set_controls(step.rest, False)
@@ -175,6 +169,7 @@ class ScriptRun:
             ),
             "game_window_focused": self._desktop.game_window_focused(),
             "pad": pad,
+            "fire_hazards": self._hazards.places,
         }
 
     def _log(self, step: Step) -> list[str]:

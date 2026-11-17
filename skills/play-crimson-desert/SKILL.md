@@ -83,6 +83,13 @@ In a fight act at once and keep scripts short: guard with `hold 1.5 lb` when the
 idle among enemies kills the player within a minute. When `hud` shows `Revive at Checkpoint`, run `hold 1.2 x`, wait
 twelve seconds and read `hud` again; `a` does nothing on that screen.
 
+### Fire and other ground hazards
+
+`goto`, `approach`, `talk` and `marker` stop when health falls with no enemy within three metres, walk back to the last
+safe spot, and record the place; `status` lists these as `fire_hazards`, and later walks route around them or refuse
+a target inside one. A result whose reason starts with `burning` means the way ahead burns: pick another direction.
+Timed `move` and attack lunges are not protected, so never `move` or attack toward a listed hazard or a visible fire.
+
 ### Controls
 
 Default pad layout: `rb` light attack, `rt` heavy attack, `lb` guard, `b` dodge, `x` jump, `a` sprint while moving
