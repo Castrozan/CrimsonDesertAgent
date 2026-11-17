@@ -1,15 +1,41 @@
 from dataclasses import dataclass
 from typing import Callable, Protocol
 
-from .navigation import GroundVector, heading_degrees, stick_toward, turn_degrees
+from .navigation import (
+    GroundVector,
+    heading_degrees,
+    interpolate,
+    stick_toward,
+    turn_degrees,
+)
 
 TICK_SECONDS = 0.02
 FULL_SPEED_DISTANCE_M = 4.0
-MINIMUM_MOVE_STICK = 0.35
+MINIMUM_MOVE_STICK = 0.5
 PROGRESS_WINDOW_SECONDS = 3.0
 MINIMUM_PROGRESS_M = 0.5
-FULL_TURN_RATE_DEGREES = 40.0
-MINIMUM_LOOK_STICK = 0.25
+CAMERA_DEGREES_PER_SECOND_BY_STICK = (
+    (0.30, 0.0),
+    (0.35, 2.7),
+    (0.45, 11.0),
+    (0.60, 34.0),
+    (0.80, 87.2),
+    (1.00, 143.5),
+)
+CAMERA_STICK_BY_DEGREES_PER_SECOND = tuple(
+    (rate, stick) for stick, rate in CAMERA_DEGREES_PER_SECOND_BY_STICK
+)
+TURN_RATE_PER_DEGREE_OF_ERROR = 6.0
+MINIMUM_TURN_RATE_DEGREES_PER_SECOND = 12.0
+
+
+def look_stick_for_error(error_degrees: float) -> float:
+    rate = max(
+        MINIMUM_TURN_RATE_DEGREES_PER_SECOND,
+        abs(error_degrees) * TURN_RATE_PER_DEGREE_OF_ERROR,
+    )
+    stick = interpolate(CAMERA_STICK_BY_DEGREES_PER_SECOND, rate)
+    return stick if error_degrees > 0 else -stick
 
 
 class Sticks(Protocol):
@@ -123,11 +149,8 @@ class Steering:
                     reason = "arrived"
                     break
                 was_within = within
-                magnitude = max(
-                    MINIMUM_LOOK_STICK, min(1.0, abs(error) / FULL_TURN_RATE_DEGREES)
-                )
                 self._sticks.set_right_stick(
-                    0.0 if within else (magnitude if error > 0 else -magnitude), 0.0
+                    0.0 if within else look_stick_for_error(error), 0.0
                 )
                 self._pause(TICK_SECONDS)
         except NotInWorld as not_in_world:

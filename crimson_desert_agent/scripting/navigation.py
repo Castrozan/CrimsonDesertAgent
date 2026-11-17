@@ -68,3 +68,12 @@ def pitch_degrees(forward: list[float]) -> float:
     if length == 0:
         raise ValueError("cannot take the pitch of a zero vector")
     return math.degrees(math.asin(max(-1.0, min(1.0, forward[1] / length))))
+
+
+def interpolate(points: tuple[tuple[float, float], ...], x: float) -> float:
+    if x <= points[0][0]:
+        return points[0][1]
+    for (left_x, left_y), (right_x, right_y) in zip(points, points[1:]):
+        if x <= right_x:
+            return left_y + (right_y - left_y) * (x - left_x) / (right_x - left_x)
+    return points[-1][1]

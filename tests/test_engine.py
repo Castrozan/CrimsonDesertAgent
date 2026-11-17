@@ -18,6 +18,9 @@ class RecordingDesktop:
             raise DesktopError("no game window")
         self.calls.append(("focus",))
 
+    def game_window_focused(self) -> bool:
+        return not self.fails
+
     def screenshot(self, path: str) -> None:
         self.calls.append(("shot", path))
 
@@ -132,6 +135,14 @@ class EngineTest(unittest.TestCase):
         answer = engine_for(game, RecordingDesktop(fails=True)).run("focus; press a")
         self.assertEqual(answer["error"], "focus: no game window")
         self.assertNotIn(("a", True), [(name, value) for _, name, value in game.events])
+
+    def test_status_reports_speed_focus_and_what_the_pad_holds(self):
+        game = SimulatedGame(run_speed_m_per_second=4.0)
+        answer = engine_for(game).run("down lt; stick left 0 1; status")
+        status = answer["steps"][2]["result"]
+        self.assertAlmostEqual(status["ground_speed_m_per_second"], 4.0, places=2)
+        self.assertTrue(status["game_window_focused"])
+        self.assertEqual(status["pad"], {"held": ["lt"], "left_stick": [0.0, 1.0], "right_stick": [0.0, 0.0]})
 
     def test_observation_steps_return_results(self):
         game = SimulatedGame(position=(1.0, 2.0, 3.0), camera_yaw_degrees=90.0)

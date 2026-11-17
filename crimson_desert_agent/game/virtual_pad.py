@@ -43,11 +43,16 @@ class VirtualPad:
         }
         self._device = UInput(capabilities, name="Microsoft X-Box 360 pad", vendor=0x045E, product=0x028E,
                               version=0x110, bustype=ecodes.BUS_USB)
+        self._held: set[str] = set()
+        self._sticks = {"left": (0.0, 0.0), "right": (0.0, 0.0)}
         time.sleep(DETECTION_DELAY_SECONDS)
 
     def close(self) -> None:
         self.release_all()
         self._device.close()
+
+    def snapshot(self) -> dict:
+        return {"held": sorted(self._held), **{f"{side}_stick": list(value) for side, value in self._sticks.items()}}
 
     def set_control(self, name: str, pressed: bool) -> None:
         if name in BUTTONS:
@@ -59,12 +64,15 @@ class VirtualPad:
             self._device.write(ecodes.EV_ABS, axis, value if pressed else 0)
         else:
             raise ValueError(f"unknown control {name!r}; known: {', '.join(CONTROL_NAMES)}")
+        (self._held.add if pressed else self._held.discard)(name)
         self._device.syn()
 
     def set_left_stick(self, right: float, forward: float) -> None:
+        self._sticks["left"] = (right, forward)
         self._write_stick(ecodes.ABS_X, ecodes.ABS_Y, right, forward)
 
     def set_right_stick(self, right: float, up: float) -> None:
+        self._sticks["right"] = (right, up)
         self._write_stick(ecodes.ABS_RX, ecodes.ABS_RY, right, up)
 
     def release_all(self) -> None:

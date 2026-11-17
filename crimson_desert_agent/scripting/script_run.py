@@ -1,7 +1,7 @@
 from dataclasses import asdict
 from typing import Callable
 
-from .observation import summarize
+from .observation import ground_speed, summarize
 from .script import Step
 from .steering import Steering
 
@@ -12,6 +12,7 @@ TURN_TIMEOUT_SECONDS = 10.0
 GOTO_TOLERANCE_M = 1.0
 GOTO_TIMEOUT_SECONDS = 30.0
 RESYNCHRONIZE_AFTER_SECONDS = 0.05
+SPEED_SAMPLE_SECONDS = 0.1
 
 
 class Aborted(Exception):
@@ -123,6 +124,18 @@ class ScriptRun:
 
     def _state(self, step: Step) -> dict:
         return summarize(self._bridge.read_state())
+
+    def _status(self, step: Step) -> dict:
+        pad = self._pad.snapshot()
+        before = self._bridge.read_state()
+        self.pause(SPEED_SAMPLE_SECONDS)
+        after = self._bridge.read_state()
+        return {
+            **summarize(after),
+            "ground_speed_m_per_second": ground_speed(before, after, SPEED_SAMPLE_SECONDS),
+            "game_window_focused": self._desktop.game_window_focused(),
+            "pad": pad,
+        }
 
     def _log(self, step: Step) -> list[str]:
         return self._game_log.new_lines()

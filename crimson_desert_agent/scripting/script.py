@@ -103,6 +103,7 @@ VERBS = {
         options=STEERING_OPTIONS,
     ),
     "state": Signature("state"),
+    "status": Signature("status"),
     "log": Signature("log"),
     "focus": Signature("focus"),
     "shot": Signature("shot PATH", (path,)),

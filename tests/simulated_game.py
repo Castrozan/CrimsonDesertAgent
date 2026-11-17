@@ -1,5 +1,8 @@
 import math
 
+from crimson_desert_agent.scripting.navigation import interpolate
+from crimson_desert_agent.scripting.steering import CAMERA_DEGREES_PER_SECOND_BY_STICK
+
 from crimson_desert_agent.game.virtual_pad import CONTROL_NAMES
 
 
@@ -9,14 +12,14 @@ class SimulatedGame:
         position=(0.0, 50.0, 0.0),
         camera_yaw_degrees=0.0,
         run_speed_m_per_second=6.0,
-        turn_rate_degrees_per_second=180.0,
+        turn_rate_scale=1.0,
         blocked=False,
         in_world=True,
     ) -> None:
         self.position = list(position)
         self.camera_yaw_degrees = camera_yaw_degrees
         self.run_speed = run_speed_m_per_second
-        self.turn_rate = turn_rate_degrees_per_second
+        self.turn_rate_scale = turn_rate_scale
         self.blocked = blocked
         self.in_world = in_world
         self.left_stick = (0.0, 0.0)
@@ -49,9 +52,14 @@ class SimulatedGame:
                 * (-right * math.sin(yaw) + forward * math.cos(yaw))
             )
         self.camera_yaw_degrees = (
-            self.camera_yaw_degrees + self.turn_rate * seconds * self.right_stick[0]
+            self.camera_yaw_degrees + self.camera_rate() * seconds
         ) % 360
         return False
+
+    def camera_rate(self) -> float:
+        stick = self.right_stick[0]
+        rate = interpolate(CAMERA_DEGREES_PER_SECOND_BY_STICK, abs(stick))
+        return self.turn_rate_scale * (rate if stick > 0 else -rate)
 
     def read_state(self) -> dict:
         if not self.in_world:
@@ -100,6 +108,10 @@ class SimulatedGame:
         self.right_stick = (0.0, 0.0)
         self.pressed.clear()
         self.events.append((round(self.now - 100.0, 6), "release_all", None))
+
+    def snapshot(self) -> dict:
+        return {"held": sorted(self.pressed), "left_stick": list(self.left_stick),
+                "right_stick": list(self.right_stick)}
 
     def is_idle(self) -> bool:
         return (

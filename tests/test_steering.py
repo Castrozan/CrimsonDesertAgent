@@ -64,18 +64,18 @@ class GoToTest(unittest.TestCase):
 
 class TurnToTest(unittest.TestCase):
     @settings(deadline=None, max_examples=80)
-    @given(headings, headings, st.sampled_from([60.0, 180.0, 400.0]))
+    @given(headings, headings, st.sampled_from([0.5, 1.0, 2.0]))
     def test_turns_the_camera_to_any_heading_by_the_short_way(
         self, start, target, turn_rate
     ):
         game = SimulatedGame(
-            camera_yaw_degrees=start, turn_rate_degrees_per_second=turn_rate
+            camera_yaw_degrees=start, turn_rate_scale=turn_rate
         )
         result = steering_for(game).turn_to(target, 3.0, 20.0)
         self.assertTrue(result.arrived, result)
         self.assertLessEqual(abs(turn_degrees(game.camera_yaw_degrees, target)), 3.0)
         self.assertTrue(game.is_idle())
-        short_way_seconds = abs(turn_degrees(start, target)) / (turn_rate * 0.25) + 1.0
+        short_way_seconds = abs(turn_degrees(start, target)) / (60.0 * turn_rate) + 2.0
         self.assertLessEqual(result.elapsed_seconds, short_way_seconds)
 
     def test_reports_not_in_world(self):

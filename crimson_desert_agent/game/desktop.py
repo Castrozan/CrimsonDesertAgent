@@ -1,4 +1,6 @@
 import json
+import os
+import socket
 import subprocess
 
 GAME_WINDOW_TITLE = "Crimson Desert"
@@ -22,16 +24,40 @@ def run(command: list[str]) -> str:
     return completed.stdout
 
 
+def hyprland(command: str) -> str:
+    path = os.path.join(
+        os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "hypr",
+        os.environ.get("HYPRLAND_INSTANCE_SIGNATURE", ""), ".socket.sock",
+    )
+    try:
+        with socket.socket(socket.AF_UNIX) as connection:
+            connection.settimeout(5.0)
+            connection.connect(path)
+            connection.sendall(command.encode())
+            chunks = []
+            while chunk := connection.recv(65536):
+                chunks.append(chunk)
+    except OSError as error:
+        raise DesktopError(f"Hyprland did not answer {command!r}: {error}") from error
+    return b"".join(chunks).decode(errors="replace")
+
+
 def game_window_geometry() -> str | None:
-    for client in json.loads(run(["hyprctl", "clients", "-j"])):
+    for client in json.loads(hyprland("j/clients")):
         if client["title"] == GAME_WINDOW_TITLE:
             (left, top), (width, height) = client["at"], client["size"]
             return f"{left},{top} {width}x{height}"
     return None
 
 
+def game_window_focused() -> bool:
+    return json.loads(hyprland("j/activewindow")).get("title") == GAME_WINDOW_TITLE
+
+
 def focus_game() -> None:
-    run(["hyprctl", "dispatch", "focuswindow", f"title:^{GAME_WINDOW_TITLE}$"])
+    answer = hyprland(f"dispatch focuswindow title:^{GAME_WINDOW_TITLE}$")
+    if answer.strip() != "ok":
+        raise DesktopError(f"could not focus the game window: {answer.strip()}")
 
 
 def screenshot(path: str) -> None:

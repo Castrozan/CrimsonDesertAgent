@@ -23,3 +23,12 @@ def summarize(state: dict) -> dict:
         "camera_heading_degrees": described.get("camera_heading_degrees"),
         "camera_pitch_degrees": described.get("camera_pitch_degrees"),
     }
+
+
+def ground_speed(before: dict, after: dict, seconds: float) -> float | None:
+    if not before.get("player") or not after.get("player"):
+        return None
+    travelled = GroundVector.from_world(after["player"]["position"]).minus(
+        GroundVector.from_world(before["player"]["position"])
+    )
+    return round(travelled.length() / seconds, 2)
