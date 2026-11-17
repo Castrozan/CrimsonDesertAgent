@@ -39,9 +39,10 @@ Read their `result`. `arrived: false` comes with `timeout`, `stuck` (an obstacle
 Begin a task with `focus; status`: it adds ground speed, whether the game window has focus, and what the pad holds to
 the `state` fields. Use `state` inside a sequence, where its 1 ms cost matters, and `status` at decision points.
 
-State does not yet carry stance, menus, prompts, enemies or dialogue. Those need the `screenshot` tool, or `shot PATH`
-inside a script when the picture must be taken at an exact moment. Take one before the first action of a session: a
-crouched character moves at walking pace under every input and nothing in `state` says so.
+State carries every field the running mod exposes, so read what it returns before assuming a gap. Anything absent
+from it, such as stance, menus, prompts or dialogue on older mod builds, needs the `screenshot` tool, or `shot PATH`
+inside a script when the picture must be taken at an exact moment. When stance is absent, take a screenshot before
+the first action: a crouched character moves at walking pace under every input.
 
 ### Controls
 

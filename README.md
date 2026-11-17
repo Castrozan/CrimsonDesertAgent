@@ -10,8 +10,8 @@ Xbox 360 pad with timed input scripts, and steers the camera and the character i
 /plugin install crimson-desert-agent@crimson-desert-agent
 ```
 
-The plugin brings an MCP server (`crimson-desert`), two skills (`play-crimson-desert`, `launch-crimson-desert`) and
-the scripts in `scripts/`. The Python environment is built on first use, with `nix` when present and a `venv`
+The plugin brings an MCP server (`crimson-desert`), skills for playing the player, playing the co-op peer and
+launching the game, and the scripts in `scripts/`. The Python environment is built on first use, with `nix` when present and a `venv`
 otherwise.
 
 ## Requirements
@@ -31,12 +31,19 @@ costs one round trip. Step timing follows a deadline schedule, so durations do n
 The script language is printed by `scripts/crimson-desert` with no arguments and is part of the `run_script` tool
 description.
 
+## Two agents
+
+One agent plays the player through the pad. A second agent can play the co-op peer independently: `run_peer_script`
+sends commands to the control port of `cdmp_peer` in agent mode, which needs no game window and no pad. The peer
+lists its own commands when sent `help`.
+
 ## Environment overrides
 
 | Variable | Meaning |
 | --- | --- |
 | `CRIMSON_DESERT_BIN64` | Game `bin64` directory, where the mod writes `cdmp.log` |
 | `CRIMSON_DESERT_BRIDGE_PORT` | Loopback port of the state bridge |
+| `CRIMSON_DESERT_PEER_PORT` | Loopback port of the peer control port |
 | `CRIMSON_DESERT_STEAM_APPLICATION` | Steam application id used to launch |
 | `CRIMSON_DESERT_SHADER_DIALOG_SKIP_POINT` | Screen point clicked to skip Steam's shader dialog |
 | `CRIMSON_DESERT_WORLD_TIMEOUT_SECONDS` | How long the launcher waits for the world |

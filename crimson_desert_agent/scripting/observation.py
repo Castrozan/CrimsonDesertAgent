@@ -13,15 +13,27 @@ def with_camera_angles(state: dict) -> dict:
     return described
 
 
+SUMMARIZED_ELSEWHERE = frozenset(
+    {"sequence", "uptime_ms", "in_world", "player", "player_status", "camera", "camera_status"}
+)
+SUMMARIZED_PLAYER_FIELDS = frozenset(
+    {"position", "rotation", "health", "health_max", "stamina", "stamina_max", "static_position_error"}
+)
+
+
 def summarize(state: dict) -> dict:
     described = with_camera_angles(state)
     player = described.get("player") or {}
+    newer_fields = {key: value for key, value in described.items() if key not in SUMMARIZED_ELSEWHERE}
+    newer_player_fields = {
+        key: value for key, value in player.items() if key not in SUMMARIZED_PLAYER_FIELDS
+    }
     return {
         "in_world": described.get("in_world"),
         "position": player.get("position"),
         "health": player.get("health"),
-        "camera_heading_degrees": described.get("camera_heading_degrees"),
-        "camera_pitch_degrees": described.get("camera_pitch_degrees"),
+        **newer_player_fields,
+        **newer_fields,
     }
 
 

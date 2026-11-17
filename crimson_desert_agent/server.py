@@ -4,7 +4,7 @@ import tempfile
 
 from mcp.server.fastmcp import FastMCP, Image
 
-from . import client
+from . import client, peer
 from .game import desktop
 from .game.bridge_client import BridgeSession
 from .game.game_log import GameLog
@@ -20,7 +20,8 @@ server = FastMCP(
         "Send whole input sequences in one run_script call: one call runs many timed steps and returns each "
         "step's result and timing, so prefer one long script over many small calls. Start a session with "
         "'focus' as the first step, because input reaches the game only while its window has focus. "
-        "Load the play-crimson-desert skill for the control map and the observe-act loop."
+        "Load the play-crimson-desert skill for the control map and the observe-act loop. To play the co-op "
+        "peer instead of the player, use run_peer_script and the play-crimson-desert-peer skill."
     ),
 )
 game_log = GameLog(GAME_LOG_PATH)
@@ -40,6 +41,18 @@ RUN_SCRIPT_DESCRIPTION = (
 @server.tool(description=RUN_SCRIPT_DESCRIPTION)
 async def run_script(script: str) -> dict:
     return await asyncio.to_thread(client.run_script, script)
+
+
+@server.tool(
+    description=(
+        "Drive the co-op peer, a second character that needs no game window, through the control port of "
+        "cdmp_peer's agent mode. The script is peer commands separated by ';', sent in order over one "
+        "connection; each answer comes back with its timing. 'wait SECONDS' pauses between commands. Send "
+        "'help' first: the peer lists the commands it accepts."
+    )
+)
+async def run_peer_script(script: str) -> dict:
+    return await asyncio.to_thread(peer.run_peer_script, script)
 
 
 @server.tool(

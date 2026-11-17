@@ -3,7 +3,7 @@ import sys
 
 from .scripting.script import USAGE
 
-COMMANDS = "mcp | daemon | state | run SCRIPT | abort | quit | measure [REPETITIONS]"
+COMMANDS = "mcp | daemon | state | run SCRIPT | peer SCRIPT | abort | quit | measure [REPETITIONS]"
 
 
 def main(arguments: list[str]) -> int:
@@ -20,6 +20,12 @@ def main(arguments: list[str]) -> int:
         from .client import run_script
 
         answer = run_script(" ".join(arguments[1:]))
+        print(json.dumps(answer))
+        return 0 if answer["ok"] else 1
+    elif command == "peer" and len(arguments) > 1:
+        from .peer import run_peer_script
+
+        answer = run_peer_script(" ".join(arguments[1:]))
         print(json.dumps(answer))
         return 0 if answer["ok"] else 1
     elif command in ("abort", "quit"):

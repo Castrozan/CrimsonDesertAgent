@@ -144,6 +144,22 @@ class EngineTest(unittest.TestCase):
         self.assertTrue(status["game_window_focused"])
         self.assertEqual(status["pad"], {"held": ["lt"], "left_stick": [0.0, 1.0], "right_stick": [0.0, 0.0]})
 
+    def test_state_carries_fields_a_newer_mod_adds(self):
+        game = SimulatedGame()
+        plain = game.read_state
+
+        def newer() -> dict:
+            state = plain()
+            state["menu_open"] = True
+            state["actors"] = [{"key": 7, "distance": 3.5}]
+            state["player"]["stance"] = "crouched"
+            return state
+
+        game.read_state = newer
+        result = engine_for(game).run("state")["steps"][0]["result"]
+        self.assertEqual((result["menu_open"], result["actors"], result["stance"]),
+                         (True, [{"key": 7, "distance": 3.5}], "crouched"))
+
     def test_observation_steps_return_results(self):
         game = SimulatedGame(position=(1.0, 2.0, 3.0), camera_yaw_degrees=90.0)
         desktop = RecordingDesktop()
