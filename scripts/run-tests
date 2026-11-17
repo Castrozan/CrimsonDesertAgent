@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+plugin_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+python="$("$plugin_root/scripts/python-environment")"
+exec "$python" -m unittest discover -s "$plugin_root/tests" -t "$plugin_root" "$@"

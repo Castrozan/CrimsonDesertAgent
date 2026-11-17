@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+plugin_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+python="$("$plugin_root/scripts/python-environment")"
+PYTHONPATH="$plugin_root" exec "$python" -m crimson_desert_agent "$@"

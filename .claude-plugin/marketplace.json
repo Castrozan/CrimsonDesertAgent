@@ -1,0 +1,11 @@
+{
+  "name": "crimson-desert-agent",
+  "owner": { "name": "Castrozan" },
+  "plugins": [
+    {
+      "name": "crimson-desert-agent",
+      "source": "./",
+      "description": "Lets an agent play Crimson Desert fast: structured game state, a virtual Xbox pad driven by timed input scripts, closed-loop camera and movement, screenshots, and launch scripts."
+    }
+  ]
+}

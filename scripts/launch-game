@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -uo pipefail
+plugin_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+agent="$plugin_root/scripts/crimson-desert"
+steam_application="${CRIMSON_DESERT_STEAM_APPLICATION:-3321460}"
+steam_log="$HOME/.local/share/Steam/logs/console_log.txt"
+shader_dialog_skip_point="${CRIMSON_DESERT_SHADER_DIALOG_SKIP_POINT:-970 591}"
+world_timeout_seconds="${CRIMSON_DESERT_WORLD_TIMEOUT_SECONDS:-900}"
+
+game_is_running() { pgrep -x CrimsonDesert.e >/dev/null; }
+in_world() { "$agent" state 2>/dev/null | grep -q '"in_world": true'; }
+steam_says() { tail -2 "$steam_log" 2>/dev/null | grep -qE "$1"; }
+
+if [[ "${1:-}" == "--restart" ]]; then
+  pkill -x CrimsonDesert.e
+  for _ in $(seq 1 30); do
+    game_is_running || break
+    sleep 1
+  done
+fi
+if in_world; then
+  echo "in world"
+  exit 0
+fi
+if ! game_is_running; then
+  "$agent" quit >/dev/null 2>&1
+  setsid steam "steam://rungameid/$steam_application" >/dev/null 2>&1 </dev/null &
+  for _ in $(seq 1 30); do
+    game_is_running && break
+    steam_says 'ProcessingShaderCa|Failed' && break
+    sleep 2
+  done
+  if steam_says Failed; then
+    echo "launch failed: $(tail -1 "$steam_log")"
+    exit 1
+  fi
+  if steam_says ProcessingShaderCa; then
+    read -r skip_x skip_y <<<"$shader_dialog_skip_point"
+    hypruse pointer click "$skip_x" "$skip_y" >/dev/null
+  fi
+fi
+deadline=$((SECONDS + world_timeout_seconds))
+while ((SECONDS < deadline)); do
+  if in_world; then
+    echo "in world"
+    exit 0
+  fi
+  if game_is_running && "$agent" state >/dev/null 2>&1; then
+    "$agent" run "focus; press a 0.1 0.1" >/dev/null 2>&1
+  fi
+  sleep 4
+done
+echo "timed out before the world loaded"
+exit 1

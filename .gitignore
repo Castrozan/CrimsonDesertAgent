@@ -1,0 +1,4 @@
+__pycache__/
+.hypothesis/
+.ruff_cache/
+.agent-brief.md
