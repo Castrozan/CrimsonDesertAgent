@@ -3,10 +3,10 @@ import time
 from evdev import AbsInfo, UInput, ecodes
 
 BUTTONS = {
-    "a": ecodes.BTN_SOUTH,
-    "b": ecodes.BTN_EAST,
-    "x": ecodes.BTN_WEST,
-    "y": ecodes.BTN_NORTH,
+    "a": ecodes.BTN_A,
+    "b": ecodes.BTN_B,
+    "x": ecodes.BTN_X,
+    "y": ecodes.BTN_Y,
     "lb": ecodes.BTN_TL,
     "rb": ecodes.BTN_TR,
     "start": ecodes.BTN_START,
