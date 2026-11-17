@@ -76,6 +76,13 @@ A stray `b`, `start` or window close can raise the game's exit prompt, and the n
 game. The engine refuses `a` and `start` when the last `hud` shows exit, quit or title words, and while the game is
 paused unless `hud` was read in the same script since the last confirm. On `exit_prompt: true` press `b`, then `hud`.
 
+### Fighting and dying
+
+In a fight act at once and keep scripts short: guard with `hold 1.5 lb` when the guide says to block, attack with
+`press rb` several times, and read `hud; state` at the end of every script to watch `health` and the guide. Standing
+idle among enemies kills the player within a minute. When `hud` shows `Revive at Checkpoint`, run `hold 1.2 x`, wait
+twelve seconds and read `hud` again; `a` does nothing on that screen.
+
 ### Controls
 
 Default pad layout: `rb` light attack, `rt` heavy attack, `lb` guard, `b` dodge, `x` jump, `a` sprint while moving
