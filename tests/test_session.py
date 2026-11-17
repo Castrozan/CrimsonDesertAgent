@@ -15,14 +15,20 @@ class GraphicalSessionTest(unittest.TestCase):
             open(os.path.join(runtime, "wayland-1"), "w").close()
             open(os.path.join(runtime, "wayland-1.lock"), "w").close()
             open(os.path.join(runtime, "xwayland-auth"), "w").close()
-            with mock.patch.dict(os.environ, {"XDG_RUNTIME_DIR": runtime, "WAYLAND_DISPLAY": "wayland-7"}, clear=True):
+            with mock.patch.dict(
+                os.environ,
+                {"XDG_RUNTIME_DIR": runtime, "WAYLAND_DISPLAY": "wayland-7"},
+                clear=True,
+            ):
                 adopt_graphical_session()
                 self.assertEqual(os.environ["HYPRLAND_INSTANCE_SIGNATURE"], "newer_2")
                 self.assertEqual(os.environ["WAYLAND_DISPLAY"], "wayland-7")
             with mock.patch.dict(os.environ, {"XDG_RUNTIME_DIR": runtime}, clear=True):
                 adopt_graphical_session()
                 self.assertEqual(os.environ["WAYLAND_DISPLAY"], "wayland-1")
-                self.assertEqual(os.environ["XAUTHORITY"], os.path.join(runtime, "xwayland-auth"))
+                self.assertEqual(
+                    os.environ["XAUTHORITY"], os.path.join(runtime, "xwayland-auth")
+                )
 
 
 if __name__ == "__main__":
