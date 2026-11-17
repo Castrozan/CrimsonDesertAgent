@@ -16,8 +16,12 @@ BUTTONS = {
     "right_stick_click": ecodes.BTN_THUMBR,
 }
 TRIGGERS = {"lt": ecodes.ABS_Z, "rt": ecodes.ABS_RZ}
-DPAD = {"dpad_left": (ecodes.ABS_HAT0X, -1), "dpad_right": (ecodes.ABS_HAT0X, 1),
-        "dpad_up": (ecodes.ABS_HAT0Y, -1), "dpad_down": (ecodes.ABS_HAT0Y, 1)}
+DPAD = {
+    "dpad_left": (ecodes.ABS_HAT0X, -1),
+    "dpad_right": (ecodes.ABS_HAT0X, 1),
+    "dpad_up": (ecodes.ABS_HAT0Y, -1),
+    "dpad_down": (ecodes.ABS_HAT0Y, 1),
+}
 CONTROL_NAMES = sorted([*BUTTONS, *TRIGGERS, *DPAD])
 
 STICK_RANGE = 32767
@@ -36,13 +40,24 @@ class VirtualPad:
         capabilities = {
             ecodes.EV_KEY: list(BUTTONS.values()),
             ecodes.EV_ABS: [
-                (ecodes.ABS_X, STICK), (ecodes.ABS_Y, STICK), (ecodes.ABS_RX, STICK), (ecodes.ABS_RY, STICK),
-                (ecodes.ABS_Z, TRIGGER), (ecodes.ABS_RZ, TRIGGER),
-                (ecodes.ABS_HAT0X, HAT), (ecodes.ABS_HAT0Y, HAT),
+                (ecodes.ABS_X, STICK),
+                (ecodes.ABS_Y, STICK),
+                (ecodes.ABS_RX, STICK),
+                (ecodes.ABS_RY, STICK),
+                (ecodes.ABS_Z, TRIGGER),
+                (ecodes.ABS_RZ, TRIGGER),
+                (ecodes.ABS_HAT0X, HAT),
+                (ecodes.ABS_HAT0Y, HAT),
             ],
         }
-        self._device = UInput(capabilities, name="Microsoft X-Box 360 pad", vendor=0x045E, product=0x028E,
-                              version=0x110, bustype=ecodes.BUS_USB)
+        self._device = UInput(
+            capabilities,
+            name="Microsoft X-Box 360 pad",
+            vendor=0x045E,
+            product=0x028E,
+            version=0x110,
+            bustype=ecodes.BUS_USB,
+        )
         self._held: set[str] = set()
         self._sticks = {"left": (0.0, 0.0), "right": (0.0, 0.0)}
         time.sleep(DETECTION_DELAY_SECONDS)
@@ -52,7 +67,10 @@ class VirtualPad:
         self._device.close()
 
     def snapshot(self) -> dict:
-        return {"held": sorted(self._held), **{f"{side}_stick": list(value) for side, value in self._sticks.items()}}
+        return {
+            "held": sorted(self._held),
+            **{f"{side}_stick": list(value) for side, value in self._sticks.items()},
+        }
 
     def set_control(self, name: str, pressed: bool) -> None:
         if name in BUTTONS:
@@ -63,7 +81,9 @@ class VirtualPad:
             axis, value = DPAD[name]
             self._device.write(ecodes.EV_ABS, axis, value if pressed else 0)
         else:
-            raise ValueError(f"unknown control {name!r}; known: {', '.join(CONTROL_NAMES)}")
+            raise ValueError(
+                f"unknown control {name!r}; known: {', '.join(CONTROL_NAMES)}"
+            )
         (self._held.add if pressed else self._held.discard)(name)
         self._device.syn()
 
@@ -81,7 +101,9 @@ class VirtualPad:
         for name in CONTROL_NAMES:
             self.set_control(name, False)
 
-    def _write_stick(self, horizontal_axis: int, vertical_axis: int, right: float, up: float) -> None:
+    def _write_stick(
+        self, horizontal_axis: int, vertical_axis: int, right: float, up: float
+    ) -> None:
         self._device.write(ecodes.EV_ABS, horizontal_axis, stick_value(right))
         self._device.write(ecodes.EV_ABS, vertical_axis, stick_value(-up))
         self._device.syn()

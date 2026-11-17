@@ -5,8 +5,10 @@ import socketserver
 import threading
 import time
 
-from .game import desktop
+from .game import desktop, screenshot
 from .game.bridge_client import BridgeSession
+from .peer import open_peer
+from .scripting.devices import Devices
 from .scripting.engine import Engine
 from .game.game_log import GameLog
 from .settings import (
@@ -29,10 +31,16 @@ class Daemon:
     def start(self) -> None:
         self._pad = VirtualPad()
         self._engine = Engine(
-            self._pad,
-            lambda: BridgeSession(BRIDGE_HOST, BRIDGE_PORT, BRIDGE_TIMEOUT_SECONDS),
-            desktop,
-            GameLog(GAME_LOG_PATH),
+            Devices(
+                pad=self._pad,
+                open_bridge=lambda: BridgeSession(
+                    BRIDGE_HOST, BRIDGE_PORT, BRIDGE_TIMEOUT_SECONDS
+                ),
+                desktop=desktop,
+                camera=screenshot,
+                game_log=GameLog(GAME_LOG_PATH),
+                open_peer=open_peer,
+            ),
             self._abort.wait,
             time.monotonic,
         )

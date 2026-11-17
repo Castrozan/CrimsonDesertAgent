@@ -25,6 +25,14 @@ def connect() -> socket.socket:
     return connection
 
 
+def daemon_answers() -> bool:
+    try:
+        connect().close()
+    except OSError:
+        return False
+    return True
+
+
 def start_daemon() -> socket.socket:
     with open(DAEMON_LOG_PATH, "ab") as log_file:
         subprocess.Popen(

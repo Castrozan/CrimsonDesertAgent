@@ -1,9 +1,12 @@
 from dataclasses import asdict
 from typing import Callable
 
+from . import photography
+from .devices import Devices
 from .observation import ground_speed, summarize
 from .script import Step
 from .steering import Steering
+from .teaching import DEFAULT_TIMEOUT_SECONDS, teach_peer
 
 PRESS_HOLD_SECONDS = 0.06
 PRESS_GAP_SECONDS = 0.04
@@ -23,21 +26,20 @@ class Aborted(Exception):
 class ScriptRun:
     def __init__(
         self,
-        pad,
+        devices: Devices,
         bridge,
-        desktop,
-        game_log,
         interrupted_within: Callable[[float], bool],
         clock: Callable[[], float],
     ) -> None:
-        self._pad = pad
+        self._devices = devices
+        self._pad = devices.pad
         self._bridge = bridge
-        self._desktop = desktop
-        self._game_log = game_log
+        self._desktop = devices.desktop
+        self._game_log = devices.game_log
         self._interrupted_within = interrupted_within
         self._clock = clock
         self._cursor = clock()
-        self._steering = Steering(bridge.read_state, pad, self.pause, clock)
+        self._steering = Steering(bridge.read_state, devices.pad, self.pause, clock)
 
     def pause(self, seconds: float) -> None:
         now = self._clock()
@@ -133,7 +135,9 @@ class ScriptRun:
         after = self._bridge.read_state()
         return {
             **summarize(after),
-            "ground_speed_m_per_second": ground_speed(before, after, SPEED_SAMPLE_SECONDS),
+            "ground_speed_m_per_second": ground_speed(
+                before, after, SPEED_SAMPLE_SECONDS
+            ),
             "game_window_focused": self._desktop.game_window_focused(),
             "pad": pad,
         }
@@ -144,9 +148,17 @@ class ScriptRun:
     def _focus(self, step: Step) -> None:
         self._desktop.focus_game()
 
-    def _shot(self, step: Step) -> str:
-        self._desktop.screenshot(step.values[0])
-        return step.values[0]
+    def _shot(self, step: Step) -> dict:
+        return photography.take(
+            step, self._devices.camera, self._bridge.read_state, self.pause
+        )
 
-
-
+    def _teach(self, step: Step) -> dict:
+        with self._devices.open_peer() as peer:
+            return teach_peer(
+                self._pad,
+                peer.ask,
+                self.pause,
+                self._clock,
+                step.options.get("timeout", DEFAULT_TIMEOUT_SECONDS),
+            )

@@ -68,9 +68,7 @@ class TurnToTest(unittest.TestCase):
     def test_turns_the_camera_to_any_heading_by_the_short_way(
         self, start, target, turn_rate
     ):
-        game = SimulatedGame(
-            camera_yaw_degrees=start, turn_rate_scale=turn_rate
-        )
+        game = SimulatedGame(camera_yaw_degrees=start, turn_rate_scale=turn_rate)
         result = steering_for(game).turn_to(target, 3.0, 20.0)
         self.assertTrue(result.arrived, result)
         self.assertLessEqual(abs(turn_degrees(game.camera_yaw_degrees, target)), 3.0)

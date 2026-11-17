@@ -1,55 +1,22 @@
 from dataclasses import dataclass, field
 from typing import Callable
 
-from ..game.virtual_pad import CONTROL_NAMES
-
-MAXIMUM_SECONDS = 120.0
-STICK_SIDES = ("left", "right")
+from .arguments import (
+    axis,
+    control,
+    count,
+    count_of_pixels,
+    number,
+    path,
+    pixel_box,
+    positive,
+    seconds,
+    stick_side,
+)
 
 
 class ScriptError(ValueError):
     pass
-
-
-def control(word: str) -> str:
-    if word not in CONTROL_NAMES:
-        raise ValueError(
-            f"unknown control {word!r}; controls: {', '.join(CONTROL_NAMES)}"
-        )
-    return word
-
-
-def seconds(word: str) -> float:
-    value = float(word)
-    if not 0.0 <= value <= MAXIMUM_SECONDS:
-        raise ValueError(
-            f"seconds must be between 0 and {MAXIMUM_SECONDS:g}, got {word}"
-        )
-    return value
-
-
-def axis(word: str) -> float:
-    value = float(word)
-    if not -1.0 <= value <= 1.0:
-        raise ValueError(f"stick deflection must be between -1 and 1, got {word}")
-    return value
-
-
-def number(word: str) -> float:
-    value = float(word)
-    if value != value or value in (float("inf"), float("-inf")):
-        raise ValueError(f"expected a finite number, got {word}")
-    return value
-
-
-def stick_side(word: str) -> str:
-    if word not in STICK_SIDES:
-        raise ValueError(f"stick must be left or right, got {word!r}")
-    return word
-
-
-def path(word: str) -> str:
-    return word
 
 
 Converter = Callable[[str], object]
@@ -106,7 +73,22 @@ VERBS = {
     "status": Signature("status"),
     "log": Signature("log"),
     "focus": Signature("focus"),
-    "shot": Signature("shot PATH", (path,)),
+    "shot": Signature(
+        "shot PATH [scale=0.5] [crop=LEFT,TOP,WIDTH,HEIGHT] [brightness=1] [burst=FRAMES] [every=SECONDS] "
+        "[actor=KEY] [size=PIXELS] [fov=DEGREES]",
+        (path,),
+        options={
+            "scale": positive,
+            "crop": pixel_box,
+            "brightness": positive,
+            "burst": count,
+            "every": seconds,
+            "actor": path,
+            "size": count_of_pixels,
+            "fov": positive,
+        },
+    ),
+    "teach": Signature("teach [timeout=SECONDS]", options={"timeout": seconds}),
 }
 USAGE = "Steps separated by ';' or newlines: " + " | ".join(
     signature.usage for signature in VERBS.values()

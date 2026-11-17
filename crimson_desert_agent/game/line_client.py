@@ -7,7 +7,9 @@ class LineServiceUnavailable(Exception):
 
 
 class LineSession:
-    def __init__(self, service: str, host: str, port: int, timeout_seconds: float) -> None:
+    def __init__(
+        self, service: str, host: str, port: int, timeout_seconds: float
+    ) -> None:
         self._service = service
         self._address = (host, port)
         self._timeout_seconds = timeout_seconds
@@ -29,7 +31,9 @@ class LineSession:
     def ask(self, line: str) -> dict:
         try:
             if self._connection is None:
-                self._connection = socket.create_connection(self._address, timeout=self._timeout_seconds)
+                self._connection = socket.create_connection(
+                    self._address, timeout=self._timeout_seconds
+                )
                 self._connection.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 self._stream = self._connection.makefile("r", encoding="utf-8")
             self._connection.sendall(line.encode() + b"\n")
@@ -41,8 +45,12 @@ class LineSession:
             ) from error
         if not answer:
             self.close()
-            raise LineServiceUnavailable(f"{self._service} closed the connection without an answer")
+            raise LineServiceUnavailable(
+                f"{self._service} closed the connection without an answer"
+            )
         try:
             return json.loads(answer)
         except ValueError as error:
-            raise LineServiceUnavailable(f"{self._service} answered {answer.strip()!r}, not JSON") from error
+            raise LineServiceUnavailable(
+                f"{self._service} answered {answer.strip()!r}, not JSON"
+            ) from error

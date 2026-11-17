@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
-environment="${XDG_CACHE_HOME:-$HOME/.cache}/crimson-desert-agent/python"
-packages=(mcp evdev hypothesis)
+packages=(mcp evdev hypothesis pillow)
+revision="$(printf '%s' "${packages[*]}" | cksum | cut -d' ' -f1)"
+environment="${XDG_CACHE_HOME:-$HOME/.cache}/crimson-desert-agent/python-$revision"
 if [[ ! -x "$environment/bin/python" ]]; then
   mkdir -p "$(dirname "$environment")"
   if command -v nix >/dev/null; then

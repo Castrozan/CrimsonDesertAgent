@@ -3,43 +3,10 @@ import unittest
 from hypothesis import given, strategies as st
 
 from crimson_desert_agent.game.bridge_client import BridgeUnavailable
-from crimson_desert_agent.game.desktop import DesktopError
-from crimson_desert_agent.scripting.engine import Engine
 from tests.simulated_game import SimulatedGame
 
 
-class RecordingDesktop:
-    def __init__(self, fails: bool = False) -> None:
-        self.calls: list[tuple] = []
-        self.fails = fails
-
-    def focus_game(self) -> None:
-        if self.fails:
-            raise DesktopError("no game window")
-        self.calls.append(("focus",))
-
-    def game_window_focused(self) -> bool:
-        return not self.fails
-
-    def screenshot(self, path: str) -> None:
-        self.calls.append(("shot", path))
-
-
-class FixedLog:
-    def new_lines(self) -> list[str]:
-        return ["World: loaded"]
-
-
-def engine_for(game: SimulatedGame, desktop: RecordingDesktop | None = None) -> Engine:
-    return Engine(
-        game,
-        lambda: game,
-        desktop or RecordingDesktop(),
-        FixedLog(),
-        game.interrupted_within,
-        game.clock,
-    )
-
+from tests.doubles import RecordingDesktop, engine_for
 
 timed_steps = st.one_of(
     st.floats(min_value=0, max_value=3).map(
@@ -142,40 +109,9 @@ class EngineTest(unittest.TestCase):
         status = answer["steps"][2]["result"]
         self.assertAlmostEqual(status["ground_speed_m_per_second"], 4.0, places=2)
         self.assertTrue(status["game_window_focused"])
-        self.assertEqual(status["pad"], {"held": ["lt"], "left_stick": [0.0, 1.0], "right_stick": [0.0, 0.0]})
-
-    def test_state_carries_fields_a_newer_mod_adds(self):
-        game = SimulatedGame()
-        plain = game.read_state
-
-        def newer() -> dict:
-            state = plain()
-            state["menu_open"] = True
-            state["actors"] = [{"key": key, "distance": key + 0.26, "position": [1.26, 2.0, 3.0]} for key in range(9)]
-            state["player"]["stance"] = "crouched"
-            return state
-
-        game.read_state = newer
-        state, status = (step["result"] for step in engine_for(game).run("state; status")["steps"])
-        self.assertEqual((state["menu_open"], state["stance"], state["actors_in_range"]), (True, "crouched", 9))
-        self.assertEqual(state["actors"][0], {"key": 0, "distance": 0.3, "position": [1.3, 2.0, 3.0]})
-        self.assertEqual((len(state["actors"]), len(status["actors"])), (4, 9))
-
-    def test_observation_steps_return_results(self):
-        game = SimulatedGame(position=(1.0, 2.0, 3.0), camera_yaw_degrees=90.0)
-        desktop = RecordingDesktop()
-        answer = engine_for(game, desktop).run(
-            "focus; state; shot /tmp/x.jpg; log; turn 180; goto 1 30 rb"
-        )
-        results = [step.get("result") for step in answer["steps"]]
-        self.assertEqual(results[1]["position"], [1.0, 2.0, 3.0])
-        self.assertEqual(results[1]["camera_heading_degrees"], 90.0)
-        self.assertEqual((results[2], results[3]), ("/tmp/x.jpg", ["World: loaded"]))
-        self.assertTrue(results[4]["arrived"] and results[5]["arrived"], results)
-        self.assertEqual(desktop.calls, [("focus",), ("shot", "/tmp/x.jpg")])
-        self.assertIn(
-            (0.0, "rb", True),
-            [(0.0, name, value) for _, name, value in game.events if name == "rb"],
+        self.assertEqual(
+            status["pad"],
+            {"held": ["lt"], "left_stick": [0.0, 1.0], "right_stick": [0.0, 0.0]},
         )
 
 

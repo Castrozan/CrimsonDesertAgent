@@ -14,10 +14,26 @@ def with_camera_angles(state: dict) -> dict:
 
 
 SUMMARIZED_ELSEWHERE = frozenset(
-    {"sequence", "uptime_ms", "in_world", "player", "player_status", "camera", "camera_status"}
+    {
+        "sequence",
+        "uptime_ms",
+        "in_world",
+        "player",
+        "player_status",
+        "camera",
+        "camera_status",
+    }
 )
 SUMMARIZED_PLAYER_FIELDS = frozenset(
-    {"position", "rotation", "health", "health_max", "stamina", "stamina_max", "static_position_error"}
+    {
+        "position",
+        "rotation",
+        "health",
+        "health_max",
+        "stamina",
+        "stamina_max",
+        "static_position_error",
+    }
 )
 
 
@@ -33,13 +49,21 @@ def compact_actor(actor: dict) -> dict:
 def summarize(state: dict, nearest_actors: int | None = None) -> dict:
     described = with_camera_angles(state)
     player = described.get("player") or {}
-    newer_fields = {key: value for key, value in described.items() if key not in SUMMARIZED_ELSEWHERE}
+    newer_fields = {
+        key: value
+        for key, value in described.items()
+        if key not in SUMMARIZED_ELSEWHERE
+    }
     newer_player_fields = {
-        key: value for key, value in player.items() if key not in SUMMARIZED_PLAYER_FIELDS
+        key: value
+        for key, value in player.items()
+        if key not in SUMMARIZED_PLAYER_FIELDS
     }
     if isinstance(newer_fields.get("actors"), list):
         actors = newer_fields["actors"]
-        newer_fields["actors"] = [compact_actor(actor) for actor in actors[:nearest_actors]]
+        newer_fields["actors"] = [
+            compact_actor(actor) for actor in actors[:nearest_actors]
+        ]
         newer_fields["actors_in_range"] = len(actors)
     return {
         "in_world": described.get("in_world"),

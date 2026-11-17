@@ -3,7 +3,11 @@ import unittest
 
 from hypothesis import HealthCheck, given, settings, strategies as st
 
-from crimson_desert_agent.scripting.navigation import GroundVector, heading_degrees, stick_toward
+from crimson_desert_agent.scripting.navigation import (
+    GroundVector,
+    heading_degrees,
+    stick_toward,
+)
 
 coordinate = st.floats(min_value=-5000, max_value=5000, allow_nan=False)
 angle = st.floats(min_value=0, max_value=2 * math.pi, allow_nan=False)
@@ -18,21 +22,33 @@ def camera_axes(yaw: float) -> tuple[GroundVector, GroundVector]:
 class StickTowardTest(unittest.TestCase):
     @settings(deadline=None, suppress_health_check=[HealthCheck.too_slow])
     @given(coordinate, coordinate, coordinate, coordinate, angle)
-    def test_stick_points_at_target_in_camera_frame(self, player_x, player_z, target_x, target_z, yaw):
-        player, target = GroundVector(player_x, player_z), GroundVector(target_x, target_z)
+    def test_stick_points_at_target_in_camera_frame(
+        self, player_x, player_z, target_x, target_z, yaw
+    ):
+        player, target = (
+            GroundVector(player_x, player_z),
+            GroundVector(target_x, target_z),
+        )
         offset = target.minus(player)
         forward, right = camera_axes(yaw)
         stick = stick_toward(player, target, forward, right, 4.0, 0.35)
         if offset.length() < 1e-6:
             return
-        moved = GroundVector(right.x * stick.right + forward.x * stick.forward,
-                             right.z * stick.right + forward.z * stick.forward)
+        moved = GroundVector(
+            right.x * stick.right + forward.x * stick.forward,
+            right.z * stick.right + forward.z * stick.forward,
+        )
         self.assertGreater(moved.normalized().dot(offset.normalized()), 0.999)
 
     @settings(deadline=None, suppress_health_check=[HealthCheck.too_slow])
     @given(coordinate, coordinate, coordinate, coordinate, angle)
-    def test_stick_stays_in_range_and_never_below_minimum(self, player_x, player_z, target_x, target_z, yaw):
-        player, target = GroundVector(player_x, player_z), GroundVector(target_x, target_z)
+    def test_stick_stays_in_range_and_never_below_minimum(
+        self, player_x, player_z, target_x, target_z, yaw
+    ):
+        player, target = (
+            GroundVector(player_x, player_z),
+            GroundVector(target_x, target_z),
+        )
         forward, right = camera_axes(yaw)
         stick = stick_toward(player, target, forward, right, 4.0, 0.35)
         largest = max(abs(stick.right), abs(stick.forward))

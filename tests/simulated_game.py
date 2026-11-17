@@ -110,8 +110,11 @@ class SimulatedGame:
         self.events.append((round(self.now - 100.0, 6), "release_all", None))
 
     def snapshot(self) -> dict:
-        return {"held": sorted(self.pressed), "left_stick": list(self.left_stick),
-                "right_stick": list(self.right_stick)}
+        return {
+            "held": sorted(self.pressed),
+            "left_stick": list(self.left_stick),
+            "right_stick": list(self.right_stick),
+        }
 
     def is_idle(self) -> bool:
         return (

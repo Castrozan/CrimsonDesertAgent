@@ -28,3 +28,16 @@ class GameLog:
             if not ROUTINE_LINES.search(line)
         ]
         return kept[-MAXIMUM_LINES:]
+
+
+def read_log(path: str, pattern: str | None, lines: int) -> list[str]:
+    if not os.path.exists(path):
+        return []
+    matcher = re.compile(pattern) if pattern else None
+    with open(path, errors="replace") as log_file:
+        kept = [
+            line.rstrip()[:MAXIMUM_LINE_LENGTH]
+            for line in log_file
+            if matcher is None or matcher.search(line)
+        ]
+    return kept[-lines:]

@@ -4,8 +4,6 @@ import socket
 import subprocess
 
 GAME_WINDOW_TITLE = "Crimson Desert"
-SCREENSHOT_SCALE = "0.5"
-SCREENSHOT_JPEG_QUALITY = "80"
 
 
 class DesktopError(Exception):
@@ -26,8 +24,10 @@ def run(command: list[str]) -> str:
 
 def hyprland(command: str) -> str:
     path = os.path.join(
-        os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "hypr",
-        os.environ.get("HYPRLAND_INSTANCE_SIGNATURE", ""), ".socket.sock",
+        os.environ.get("XDG_RUNTIME_DIR", "/tmp"),
+        "hypr",
+        os.environ.get("HYPRLAND_INSTANCE_SIGNATURE", ""),
+        ".socket.sock",
     )
     try:
         with socket.socket(socket.AF_UNIX) as connection:
@@ -56,25 +56,22 @@ def game_window_focused() -> bool:
 
 def focus_game() -> None:
     window = f"title:^{GAME_WINDOW_TITLE}$"
-    for command in (f"dispatch focuswindow {window}", f"dispatch alterzorder top,{window}"):
+    for command in (
+        f"dispatch focuswindow {window}",
+        f"dispatch alterzorder top,{window}",
+    ):
         answer = hyprland(command).strip()
         if answer != "ok":
             raise DesktopError(f"Hyprland refused {command!r}: {answer}")
 
 
-def screenshot(path: str) -> None:
-    geometry = game_window_geometry()
-    region = ["-g", geometry] if geometry else []
-    run(
-        [
-            "grim",
-            *region,
-            "-s",
-            SCREENSHOT_SCALE,
-            "-t",
-            "jpeg",
-            "-q",
-            SCREENSHOT_JPEG_QUALITY,
-            path,
-        ]
-    )
+def run_bytes(command: list[str]) -> bytes:
+    try:
+        completed = subprocess.run(command, capture_output=True, timeout=20)
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise DesktopError(f"{command[0]} failed: {error}") from error
+    if completed.returncode != 0:
+        raise DesktopError(
+            f"{command[0]} failed: {completed.stderr.decode(errors='replace').strip()}"
+        )
+    return completed.stdout

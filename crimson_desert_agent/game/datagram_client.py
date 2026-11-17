@@ -7,7 +7,9 @@ MAXIMUM_DATAGRAM_BYTES = 65535
 
 
 class DatagramSession:
-    def __init__(self, service: str, host: str, port: int, timeout_seconds: float) -> None:
+    def __init__(
+        self, service: str, host: str, port: int, timeout_seconds: float
+    ) -> None:
         self._service = service
         self._address = (host, port)
         self._connection = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -31,4 +33,6 @@ class DatagramSession:
         try:
             return json.loads(answer)
         except ValueError as error:
-            raise LineServiceUnavailable(f"{self._service} answered {answer[:80]!r}, not JSON") from error
+            raise LineServiceUnavailable(
+                f"{self._service} answered {answer[:80]!r}, not JSON"
+            ) from error
