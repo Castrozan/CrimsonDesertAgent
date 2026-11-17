@@ -107,6 +107,11 @@ VERBS = {
         optional=(control,),
         options={"wait": seconds},
     ),
+    "fight": Signature(
+        "fight ANCHOR_X ANCHOR_Z [seconds=20] [leash=METRES]",
+        (number, number),
+        options={"seconds": seconds, "leash": positive},
+    ),
     "hazard": Signature("hazard X Z", (number, number)),
     "teach": Signature("teach [timeout=SECONDS]", options={"timeout": seconds}),
 }

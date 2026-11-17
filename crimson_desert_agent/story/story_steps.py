@@ -1,6 +1,7 @@
 from ..scripting.observation import ActorNotListed, listed_actor
 from .acquaintances import Acquaintances, name_in
 from .attack_proof import DEFAULT_FLUSH_SECONDS, prove
+from .combat import hold_ground
 from .conversation import DEFAULT_TIMEOUT_SECONDS, converse
 from .detour import go_around
 from .hud_reading import read_hud
@@ -11,7 +12,7 @@ WALK_TIMEOUT_SECONDS = 30.0
 MARKER_ARRIVAL_M = 4
 MARKER_LEG_M = 12.0
 MARKER_LEGS = 8
-VERBS = ("hud", "approach", "talk", "marker", "prove_attack")
+VERBS = ("hud", "approach", "talk", "marker", "prove_attack", "fight")
 
 
 class StorySteps:
@@ -145,4 +146,17 @@ class StorySteps:
             self._devices.read_start_actions,
             self._pause,
             step.options.get("wait", DEFAULT_FLUSH_SECONDS),
+        )
+
+    def fight(self, step) -> dict:
+        return hold_ground(
+            self._devices.pad,
+            self._bridge.read_state,
+            self._walk,
+            self._hazards,
+            self._pause,
+            self._clock,
+            (step.values[0], step.values[1]),
+            step.options.get("seconds", 20.0),
+            step.options.get("leash", 4.0),
         )
